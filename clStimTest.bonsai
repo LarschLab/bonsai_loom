@@ -63,17 +63,23 @@ from OpenCV.Net import *
 import math
 
 color = Scalar.Rgb(255,255,255)
+generator = Random()
 
 frCount=0
 endDist = 0
-startDist=40
+startDist=80
 size=5
 pointPath=[]
+speed=2 #px/fr
+gapFrames=20
 #angleOffset=math.pi/4.
+
+def random(generator,minval,maxval):
+  return generator.NextDouble() * (maxval - minval) + minval
 
 @returns(IplImage)
 def process(value):
-  global frCount,pointPath
+  global frCount,pointPath, size
   img=value.Item2
   c=value.Item1.Centroid
   heading=value.Item1.Orientation
@@ -82,9 +88,10 @@ def process(value):
 
   if frCount==0:
     pointPath=[]
+    size=random(generator,2,10)
     pathLen=startDist-endDist
-    for i in range(pathLen):
-      distance=startDist-i
+    for i in range(int(pathLen/speed)):
+      distance=startDist-i*speed
       rise = math.sin(heading)*distance
       run = math.cos(heading)*distance
       pointPath.append(Point(x+run,y+rise))
@@ -93,7 +100,7 @@ def process(value):
   #CV.Circle(img,Point(c),20,color,2)
   
   
-  if frCount &lt; 50:
+  if frCount &lt; len(pointPath)+gapFrames:
     frCount+=1
     if frCount&lt;len(pointPath):
       CV.Circle(img,pointPath[frCount],size,color,-1)
