@@ -5,7 +5,7 @@
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="q1:FileCapture">
           <q1:FileName>D:\data\b\2017\20170330_SizeVar\out_id0_30fps_20170330111849.avi</q1:FileName>
-          <q1:PlaybackRate>10</q1:PlaybackRate>
+          <q1:PlaybackRate>60</q1:PlaybackRate>
           <q1:StartPosition>1000</q1:StartPosition>
           <q1:PositionUnits>Frames</q1:PositionUnits>
           <q1:Loop>false</q1:Loop>
@@ -63,46 +63,50 @@ from OpenCV.Net import *
 import math
 
 color = Scalar.Rgb(255,255,255)
-colorb = Scalar.Rgb(255,255,255)
-colorc = Scalar.Rgb(100,100,100)
 
-radius = 20
-distance=22
-size=1
-angleOffset=math.pi/4.
+frCount=0
+endDist = 0
+startDist=40
+size=5
+pointPath=[]
+#angleOffset=math.pi/4.
 
 @returns(IplImage)
 def process(value):
-  global size
+  global frCount,pointPath
   img=value.Item2
   c=value.Item1.Centroid
   heading=value.Item1.Orientation
   x=c.X
   y=c.Y
 
-  rise = math.sin(heading+angleOffset)*distance
-  run = math.cos(heading+angleOffset)*distance
-  p2 = Point(x+run,y+rise)
+  if frCount==0:
+    pointPath=[]
+    pathLen=startDist-endDist
+    for i in range(pathLen):
+      distance=startDist-i
+      rise = math.sin(heading)*distance
+      run = math.cos(heading)*distance
+      pointPath.append(Point(x+run,y+rise))
 
-  rise = math.sin(heading-angleOffset)*distance
-  run = math.cos(heading-angleOffset)*distance
-  p3 = Point(x+run,y+rise)
 
-  CV.Circle(img,Point(c),radius,color,2)
-  CV.Circle(img,p2,size,colorb,-1)
-  CV.Circle(img,p3,size,colorc,-1)
+  #CV.Circle(img,Point(c),20,color,2)
   
-  if size &lt; 10:
-    size+=1
+  
+  if frCount &lt; 50:
+    frCount+=1
+    if frCount&lt;len(pointPath):
+      CV.Circle(img,pointPath[frCount],size,color,-1)
   else:
-    size=1
+    frCount=0
 
 
   return img
 
 def unload():
-  global size
-  size=None</q3:Script>
+  global frCount,pointPath
+  frCount=None
+  pointPath=None</q3:Script>
       </Expression>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="Zip" />
