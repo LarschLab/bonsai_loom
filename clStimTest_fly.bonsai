@@ -1,348 +1,50 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <WorkflowBuilder Version="2.3.0">
-  <Workflow xmlns:q2="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:q3="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:q5="clr-namespace:Bonsai.Shaders;assembly=Bonsai.Shaders" xmlns:q4="clr-namespace:Bonsai.joh.Vision;assembly=BonsaiPackage5" xmlns:q6="clr-namespace:Bonsai.PointGrey;assembly=Bonsai.PointGrey" xmlns:q1="clr-namespace:Bonsai.IO;assembly=Bonsai.System" xmlns="https://horizongir.org/bonsai">
+  <Workflow xmlns:q2="clr-namespace:Bonsai.Shaders;assembly=Bonsai.Shaders" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:q3="clr-namespace:Bonsai.IO;assembly=Bonsai.System" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:q5="clr-namespace:Bonsai.joh.Vision;assembly=BonsaiPackage5" xmlns:q4="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns:q6="clr-namespace:Bonsai.PointGrey;assembly=Bonsai.PointGrey" xmlns:q1="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns="https://horizongir.org/bonsai">
     <Nodes>
-      <Expression xsi:type="q1:CsvReader">
-        <q1:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-04-03T15_00_05.csv</q1:FileName>
-        <q1:ScanPattern>%s</q1:ScanPattern>
-        <q1:SkipRows>0</q1:SkipRows>
-      </Expression>
-      <Expression xsi:type="q2:PythonTransform">
-        <q2:Script>import clr
-clr.AddReference("OpenTK")
-from OpenTK import Vector2, Vector3
-from System import Array, Single, Random,Tuple
-clr.AddReference("OpenCV.Net")
-from OpenCV.Net import *
-import math
-
-color = Scalar.Rgb(250,250,250)
-generator = Random()
-xMax=2048.0 #relevant for openGL scaling
-yMax=1280.0
-maxSize=15
-minSize=0
-frCount=0
-endDist = 0.
-startDist=300.
-size=5
-pointPath=[]
-speed=5 #px/fr
-gapFrames=30*5
-ar=Array[Vector3]([Vector3(0.,0.,1)])
-#angleOffset=math.pi/4.
-
-def random(generator,minval,maxval):
-  return generator.NextDouble() * (maxval - minval) + minval
-
-def transf(x,y,hArr):
-
-  h = Mat.FromArray(hArr, 3, 3, Depth.F64, 1)
-
-  values1 = Array[float]([x,y])
-  values2 = Array[float]([1,1])
-
-  point = Mat.FromArray(values1, 1, 1, Depth.F64,2)
-  out = Mat.FromArray(values2, 1, 1, Depth.F64,2)
-
-  CV.PerspectiveTransform(point,out,h)
-
-  x=out.Item[0].Val0
-  y=out.Item[0].Val1
-
-  return x,y
-
-@returns(Tuple[IplImage,Array[Vector3],str])
-def process(value):
-  global frCount,pointPath, size,ar
-
-  imgIn=value.Item1.Item2
-  im = imgIn.Clone()
-  #CV.Copy(img,imgIn)
-
-  xoff=value.Item1.Item3.Item1
-  yoff=value.Item1.Item3.Item2
-
-  c=value.Item1.Item1.Centroid
-  heading=value.Item1.Item1.Orientation
-  x=c.X
-  y=c.Y
-
-  try:
-    if frCount==0:
-      pointPath=[]
-      size=random(generator,minSize,maxSize)
-      pathLen=startDist-endDist
-      for i in range(int(pathLen/speed)):
-        distance=startDist-i*speed
-        rise = math.sin(heading)*distance
-        run = math.cos(heading)*distance
-        pointPath.append(Point(x+run,y+rise))
-
-
-    #CV.Circle(img,Point(c),20,color,2)
-    
-    if frCount &lt; len(pointPath)+gapFrames:
-      frCount+=1
-      if frCount&lt;len(pointPath):
-
-        p=Point(pointPath[frCount].X,pointPath[frCount].Y)
-        CV.Circle(im,p,size,color,-1)
-
-        xp=pointPath[frCount].X
-        yp=pointPath[frCount].Y
-        xx=xp+xoff
-        yy=yp+yoff
-        welldata=(x,y,heading,xp,yp,size)
-        wellstr = "%i %i %0.3f %i %i %i" % welldata
-        st=" ".join(wellstr)
-
-        hArr =value.Item2 #projector-camera calibration matrix
-        xx,yy=transf(xx,yy,hArr) ##projector-camera calibration
-        ar=Array[Vector3]([Vector3(2*(xx-xMax/2)/xMax,-2*(yy-yMax/2)/yMax,size)])
-
-      else:
-        xx=pointPath[-1].X+xoff
-        yy=pointPath[-1].Y+yoff
-        ar=Array[Vector3]([Vector3(2*(xx-xMax/2)/xMax,-2*(yy-yMax/2)/yMax,1)])
-        st='gap'
-    else:
-      frCount=0
-      xx=pointPath[-1].X+xoff
-      yy=pointPath[-1].Y+yoff
-      ar=Array[Vector3]([Vector3(2*(xx-xMax/2)/xMax,-2*(yy-yMax/2)/yMax,1)])
-      st='gap'
-
-      #img = IplImage(Size(500,500), img.Depth, 3)
-  except:
-    #img = IplImage(Size(500,500), img.Depth, 3)
-
-    ar=Array[Vector3]([Vector3(2*(10-xMax/2)/xMax,-2*(10-yMax/2)/yMax,1)])
-    st='none'
-  #CV.Circle(im,Point(50,50),10,color,-1)
-  return Tuple.Create(im,ar,st)
-
-def unload():
-  global frCount,pointPath
-  frCount=None
-  pointPath=None
-  ar=None
-  size=None</q2:Script>
-      </Expression>
-      <Expression xsi:type="MemberSelector">
-        <Selector>Source.Item1</Selector>
-      </Expression>
-      <Expression xsi:type="MemberSelector">
-        <Selector>Source.Image</Selector>
-      </Expression>
       <Expression xsi:type="Combinator">
-        <Combinator xsi:type="q3:BackgroundSubtraction">
-          <q3:BackgroundFrames>120</q3:BackgroundFrames>
-          <q3:AdaptationRate>0.0001</q3:AdaptationRate>
-          <q3:ThresholdValue>0</q3:ThresholdValue>
-          <q3:ThresholdType>ToZero</q3:ThresholdType>
-          <q3:SubtractionMethod>Dark</q3:SubtractionMethod>
+        <Combinator xsi:type="q1:ImageWriter">
+          <q1:Path>\\.\pipe\p1</q1:Path>
+          <q1:Suffix>None</q1:Suffix>
+          <q1:Overwrite>false</q1:Overwrite>
         </Combinator>
       </Expression>
-      <Expression xsi:type="MemberSelector">
-        <Selector>Source.Item3</Selector>
+      <Expression xsi:type="PublishSubject">
+        <Name>trackOut</Name>
       </Expression>
       <Expression xsi:type="Combinator">
-        <Combinator xsi:type="CombineLatest" />
-      </Expression>
-      <Expression xsi:type="Combinator">
-        <Combinator xsi:type="CombineLatest" />
-      </Expression>
-      <Expression xsi:type="q1:CsvReader">
-        <q1:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-04-03T14_39_08_sel.txt</q1:FileName>
-        <q1:ScanPattern>%i %i %i %i %i %i</q1:ScanPattern>
-        <q1:SkipRows>0</q1:SkipRows>
-      </Expression>
-      <Expression xsi:type="Combinator">
-        <Combinator xsi:type="ToList" />
-      </Expression>
-      <Expression xsi:type="q2:PythonTransform">
-        <q2:Name>split_hMat</q2:Name>
-        <q2:Script>from System import Array
-@returns(Array)
-def process(value):
-  return Array[float]([float(el) for el in value.split()])</q2:Script>
-      </Expression>
-      <Expression xsi:type="NestedWorkflow">
-        <Workflow>
-          <Nodes>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="Zip" />
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="q4:HeadingFromOrientation" />
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="q3:LargestBinaryRegion" />
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="q3:BinaryRegionAnalysis" />
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="q3:FindContours">
-                <q3:Mode>External</q3:Mode>
-                <q3:Method>ChainApproxNone</q3:Method>
-                <q3:Offset>
-                  <q3:X>0</q3:X>
-                  <q3:Y>0</q3:Y>
-                </q3:Offset>
-                <q3:MinArea>5</q3:MinArea>
-                <q3:MaxArea>500</q3:MaxArea>
-              </Combinator>
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="q3:Threshold">
-                <q3:ThresholdValue>15</q3:ThresholdValue>
-                <q3:MaxValue>255</q3:MaxValue>
-                <q3:ThresholdType>Binary</q3:ThresholdType>
-              </Combinator>
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="q3:Grayscale" />
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="q3:Crop">
-                <q3:RegionOfInterest>
-                  <q3:X>89</q3:X>
-                  <q3:Y>1061</q3:Y>
-                  <q3:Width>908</q3:Width>
-                  <q3:Height>908</q3:Height>
-                </q3:RegionOfInterest>
-              </Combinator>
-            </Expression>
-            <Expression xsi:type="InputMapping">
-              <PropertyMappings>
-                <Property name="RegionOfInterest" selector="Source.Item2.Item1,Source.Item2.Item2,Source.Item2.Item3,Source.Item2.Item3" />
-              </PropertyMappings>
-              <Selector>Source.Item1</Selector>
-            </Expression>
-            <Expression xsi:type="WorkflowInput">
-              <Name>Source1</Name>
-            </Expression>
-            <Expression xsi:type="WorkflowOutput" />
-            <Expression xsi:type="MemberSelector">
-              <Selector>Source.Item2</Selector>
-            </Expression>
-          </Nodes>
-          <Edges>
-            <Edge>
-              <From>0</From>
-              <To>10</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>1</From>
-              <To>0</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>2</From>
-              <To>1</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>3</From>
-              <To>2</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>4</From>
-              <To>3</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>5</From>
-              <To>4</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>6</From>
-              <To>5</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>7</From>
-              <To>6</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>7</From>
-              <To>0</To>
-              <Label>Source2</Label>
-            </Edge>
-            <Edge>
-              <From>8</From>
-              <To>7</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>9</From>
-              <To>8</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>9</From>
-              <To>11</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>11</From>
-              <To>0</To>
-              <Label>Source3</Label>
-            </Edge>
-          </Edges>
-        </Workflow>
-      </Expression>
-      <Expression xsi:type="MemberSelector">
-        <Selector>Source.Item2</Selector>
-      </Expression>
-      <Expression xsi:type="Combinator">
-        <Combinator xsi:type="Concat" />
-      </Expression>
-      <Expression xsi:type="MemberSelector">
-        <Selector>Source.Item1</Selector>
-      </Expression>
-      <Expression xsi:type="Combinator">
-        <Combinator xsi:type="q5:DrawArrays">
-          <q5:ShaderName>Particles</q5:ShaderName>
-          <q5:DrawMode>Points</q5:DrawMode>
-          <q5:Usage>DynamicDraw</q5:Usage>
-          <q5:VertexAttributes>
-            <q5:VertexAttributeMapping>
-              <q5:Size>3</q5:Size>
-              <q5:Normalized>false</q5:Normalized>
-              <q5:Type>Float</q5:Type>
-            </q5:VertexAttributeMapping>
-          </q5:VertexAttributes>
+        <Combinator xsi:type="q2:DrawArrays">
+          <q2:ShaderName>Particles</q2:ShaderName>
+          <q2:DrawMode>Points</q2:DrawMode>
+          <q2:Usage>DynamicDraw</q2:Usage>
+          <q2:VertexAttributes>
+            <q2:VertexAttributeMapping>
+              <q2:Size>3</q2:Size>
+              <q2:Normalized>false</q2:Normalized>
+              <q2:Type>Float</q2:Type>
+            </q2:VertexAttributeMapping>
+          </q2:VertexAttributes>
         </Combinator>
       </Expression>
-      <Expression xsi:type="MemberSelector">
-        <Selector>Source.Item2</Selector>
-      </Expression>
       <Expression xsi:type="Combinator">
-        <Combinator xsi:type="CombineLatest" />
-      </Expression>
-      <Expression xsi:type="Combinator">
-        <Combinator xsi:type="q5:UpdateFrame" />
-      </Expression>
-      <Expression xsi:type="MemberSelector">
-        <Selector>Source.Item2</Selector>
+        <Combinator xsi:type="q3:TextWriter">
+          <q3:FileName>E:\00_bonsai_ffmpeg_out\PositionTxt_allROI.txt</q3:FileName>
+          <q3:Suffix>Timestamp</q3:Suffix>
+          <q3:Buffered>true</q3:Buffered>
+          <q3:Overwrite>false</q3:Overwrite>
+          <q3:Append>false</q3:Append>
+        </Combinator>
       </Expression>
       <Expression xsi:type="NestedWorkflow">
         <Name>ffmpeg</Name>
         <Workflow>
           <Nodes>
-            <Expression xsi:type="q2:PythonSource">
-              <q2:Script>import datetime
+            <Expression xsi:type="q4:PythonSource">
+              <q4:Script>import datetime
 @returns(str)
 def generate():
   currentTime=datetime.datetime.now()
-  yield currentTime.strftime('%Y%m%d%H%M%S')</q2:Script>
+  yield currentTime.strftime('%Y%m%d%H%M%S')</q4:Script>
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="IntProperty">
@@ -352,8 +54,8 @@ def generate():
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="Zip" />
             </Expression>
-            <Expression xsi:type="q2:PythonTransform">
-              <q2:Script>import subprocess as sp
+            <Expression xsi:type="q4:PythonTransform">
+              <q4:Script>import subprocess as sp
 import datetime
 
 @returns(bool)
@@ -366,9 +68,9 @@ def process(inputs):
   cam_id=str(inputs.Item3)
   codec_q=str(inputs.Item4)
 
-  cmd='c:\\ffmpeg\\bin\\ffmpeg.exe -y -f rawvideo -vcodec rawvideo -s '+vid_width+'x'+vid_height+' -r '+vid_rate+' -pix_fmt bgr24 -i \\\\.\\pipe\\p1 -q:v '+codec_q+' -vcodec mpeg4 -vtag xvid e:\\00_bonsai_ffmpeg_out\\out_id'+cam_id+'_'+vid_rate+'fps'+'_'+currentTime+'.avi'
+  cmd='c:\\ffmpeg\\bin\\ffmpeg.exe -y -f rawvideo -vcodec rawvideo -s '+vid_width+'x'+vid_height+' -r '+vid_rate+' -pix_fmt gray -i \\\\.\\pipe\\p1 -q:v '+codec_q+' -vcodec mpeg4 -vtag xvid e:\\00_bonsai_ffmpeg_out\\out_id'+cam_id+'_'+vid_rate+'fps'+'_'+currentTime+'.avi'
   sp.Popen(cmd)
-  return True</q2:Script>
+  return True</q4:Script>
             </Expression>
             <Expression xsi:type="WorkflowInput">
               <Name>Source1</Name>
@@ -405,6 +107,11 @@ def process(inputs):
             <Expression xsi:type="MemberSelector">
               <Selector>Source.Height</Selector>
             </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Take">
+                <Count>1</Count>
+              </Combinator>
+            </Expression>
           </Nodes>
           <Edges>
             <Edge>
@@ -424,12 +131,7 @@ def process(inputs):
             </Edge>
             <Edge>
               <From>4</From>
-              <To>11</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>4</From>
-              <To>12</To>
+              <To>13</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
@@ -472,92 +174,504 @@ def process(inputs):
               <To>2</To>
               <Label>Source7</Label>
             </Edge>
+            <Edge>
+              <From>13</From>
+              <To>11</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>13</From>
+              <To>12</To>
+              <Label>Source1</Label>
+            </Edge>
           </Edges>
         </Workflow>
       </Expression>
-      <Expression xsi:type="Combinator">
-        <Combinator xsi:type="q3:ImageWriter">
-          <q3:Path>\\.\pipe\p1</q3:Path>
-          <q3:Suffix>None</q3:Suffix>
-          <q3:Overwrite>false</q3:Overwrite>
-        </Combinator>
-      </Expression>
-      <Expression xsi:type="Combinator">
-        <Combinator xsi:type="Zip" />
+      <Expression xsi:type="SelectMany">
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Item1</Selector>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Concat" />
+            </Expression>
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Item2</Selector>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Zip" />
+            </Expression>
+            <Expression xsi:type="WorkflowInput">
+              <Name>Source1</Name>
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Item3</Selector>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="CombineLatest" />
+            </Expression>
+            <Expression xsi:type="NestedWorkflow">
+              <Name>findFish</Name>
+              <Workflow>
+                <Nodes>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="ToList" />
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q1:LargestBinaryRegion" />
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q1:BinaryRegionAnalysis" />
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q1:FindContours">
+                      <q1:Mode>External</q1:Mode>
+                      <q1:Method>ChainApproxNone</q1:Method>
+                      <q1:Offset>
+                        <q1:X>0</q1:X>
+                        <q1:Y>0</q1:Y>
+                      </q1:Offset>
+                      <q1:MinArea>5</q1:MinArea>
+                      <q1:MaxArea>5000</q1:MaxArea>
+                    </Combinator>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q1:Crop">
+                      <q1:RegionOfInterest>
+                        <q1:X>1043</q1:X>
+                        <q1:Y>1067</q1:Y>
+                        <q1:Width>920</q1:Width>
+                        <q1:Height>920</q1:Height>
+                      </q1:RegionOfInterest>
+                    </Combinator>
+                  </Expression>
+                  <Expression xsi:type="InputMapping">
+                    <PropertyMappings>
+                      <Property name="RegionOfInterest" selector="Source.Item2.Item1,Source.Item2.Item2,Source.Item2.Item3,Source.Item2.Item3" />
+                    </PropertyMappings>
+                    <Selector>Source.Item1</Selector>
+                  </Expression>
+                  <Expression xsi:type="WorkflowInput">
+                    <Name>Source1</Name>
+                  </Expression>
+                  <Expression xsi:type="WorkflowOutput" />
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q5:HeadingFromOrientation" />
+                  </Expression>
+                </Nodes>
+                <Edges>
+                  <Edge>
+                    <From>0</From>
+                    <To>7</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>1</From>
+                    <To>8</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>2</From>
+                    <To>1</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>3</From>
+                    <To>2</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>4</From>
+                    <To>3</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>5</From>
+                    <To>4</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>6</From>
+                    <To>5</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>8</From>
+                    <To>0</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                </Edges>
+              </Workflow>
+            </Expression>
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Item2</Selector>
+            </Expression>
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>0</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>0</From>
+              <To>3</To>
+              <Label>Source2</Label>
+            </Edge>
+            <Edge>
+              <From>1</From>
+              <To>7</To>
+              <Label>Source2</Label>
+            </Edge>
+            <Edge>
+              <From>2</From>
+              <To>7</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>3</From>
+              <To>5</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>4</From>
+              <To>2</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>4</From>
+              <To>0</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>4</From>
+              <To>6</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>4</From>
+              <To>9</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>6</From>
+              <To>3</To>
+              <Label>Source3</Label>
+            </Edge>
+            <Edge>
+              <From>7</From>
+              <To>8</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>8</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>9</From>
+              <To>3</To>
+              <Label>Source4</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
       </Expression>
       <Expression xsi:type="MemberSelector">
-        <Selector>Source.Depth</Selector>
+        <Selector>Source.Item2</Selector>
       </Expression>
       <Expression xsi:type="MemberSelector">
         <Selector>Source.Item2</Selector>
       </Expression>
       <Expression xsi:type="Combinator">
-        <Combinator xsi:type="q3:ConvertColor">
-          <q3:Conversion>Gray2Bgr</q3:Conversion>
-        </Combinator>
+        <Combinator xsi:type="CombineLatest" />
       </Expression>
       <Expression xsi:type="Combinator">
-        <Combinator xsi:type="q6:FlyCapture">
-          <q6:Index>0</q6:Index>
-          <q6:ColorFormat>Bgr</q6:ColorFormat>
-          <q6:ColorProcessing>Default</q6:ColorProcessing>
-        </Combinator>
+        <Combinator xsi:type="CombineLatest" />
+      </Expression>
+      <Expression xsi:type="NestedWorkflow">
+        <Name>flyVideo</Name>
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q1:Threshold">
+                <q1:ThresholdValue>15</q1:ThresholdValue>
+                <q1:MaxValue>255</q1:MaxValue>
+                <q1:ThresholdType>Binary</q1:ThresholdType>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q1:Grayscale" />
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q1:BackgroundSubtraction">
+                <q1:BackgroundFrames>120</q1:BackgroundFrames>
+                <q1:AdaptationRate>0.0001</q1:AdaptationRate>
+                <q1:ThresholdValue>0</q1:ThresholdValue>
+                <q1:ThresholdType>ToZero</q1:ThresholdType>
+                <q1:SubtractionMethod>Dark</q1:SubtractionMethod>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Image</Selector>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q6:FlyCapture">
+                <q6:Index>0</q6:Index>
+                <q6:ColorFormat>Bgr</q6:ColorFormat>
+                <q6:ColorProcessing>Default</q6:ColorProcessing>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>0</From>
+              <To>5</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>1</From>
+              <To>2</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>2</From>
+              <To>0</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>3</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>4</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="ToList" />
+      </Expression>
+      <Expression xsi:type="q4:PythonTransform">
+        <q4:Name>split_hMat</q4:Name>
+        <q4:Script>from System import Array
+@returns(Array)
+def process(value):
+  return Array[float]([float(el) for el in value.split()])</q4:Script>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q2:UpdateFrame" />
+      </Expression>
+      <Expression xsi:type="MemberSelector">
+        <Selector>Source.Item1</Selector>
+      </Expression>
+      <Expression xsi:type="q3:CsvReader">
+        <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-04-03T14_39_08.csv</q3:FileName>
+        <q3:ScanPattern>%i %i %i %i %i %i</q3:ScanPattern>
+        <q3:SkipRows>0</q3:SkipRows>
+      </Expression>
+      <Expression xsi:type="q3:CsvReader">
+        <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-04-03T15_00_05.csv</q3:FileName>
+        <q3:ScanPattern>%s</q3:ScanPattern>
+        <q3:SkipRows>0</q3:SkipRows>
+      </Expression>
+      <Expression xsi:type="q4:PythonTransform">
+        <q4:Script>import clr
+clr.AddReference("OpenTK")
+from OpenTK import Vector2, Vector3
+from System import Array, Single, Random,Tuple
+clr.AddReference("OpenCV.Net")
+from OpenCV.Net import *
+import math
+import traceback
+
+color = Scalar.Rgb(250,250,250)
+generator = Random()
+xMax=2048.0 #relevant for openGL scaling
+yMax=1280.0
+maxSize=15
+minSize=0
+frCount=0
+endDist = 0.
+startDist=300.
+size=5
+pointPathAll=[]
+speed=5 #px/fr
+gapFrames=30*5
+ar=Array[Vector3]([Vector3(0.,0.,1)])
+#angleOffset=math.pi/4.
+
+
+def random(generator,minval,maxval):
+  return generator.NextDouble() * (maxval - minval) + minval
+
+def transf(x,y,hArr):
+
+  h = Mat.FromArray(hArr, 3, 3, Depth.F64, 1)
+
+  values1 = Array[float]([x,y])
+  values2 = Array[float]([1,1])
+
+  point = Mat.FromArray(values1, 1, 1, Depth.F64,2)
+  out = Mat.FromArray(values2, 1, 1, Depth.F64,2)
+
+  CV.PerspectiveTransform(point,out,h)
+
+  x=out.Item[0].Val0
+  y=out.Item[0].Val1
+
+  return x,y
+
+@returns(Tuple[Array[Vector3],str])
+def process(value):
+  global frCount,pointPathAll, size,ar
+
+  pathLen=startDist-endDist
+  pl=int(pathLen/speed)
+
+  #imgIn=value.Item4
+  #im = imgIn.Clone()
+  #CV.Copy(img,imgIn)
+
+
+
+  cAll=[]
+  headingAll=[]
+  for a in range(value.Item1.Count):
+    c=value.Item1[a].Centroid
+    heading=value.Item1[a].Orientation
+    cAll.append(c)
+    headingAll.append(heading)
+
+  try:
+
+    if frCount==0:
+      pointPathAll=[]
+      size=random(generator,minSize,maxSize)
+      
+
+      headingStart=[]
+      cStart=[]
+
+      for a in range(value.Item1.Count):
+
+        c=cAll[a]
+        heading=headingAll[a]
+        headingStart.append(heading)
+        cStart.append(c)
+        x=c.X
+        y=c.Y
+
+        pointPath=[]
+        for i in range(pl):
+          distance=startDist-i*speed
+          rise = math.sin(heading)*distance
+          run = math.cos(heading)*distance
+          pointPath.append(Point(x+run,y+rise))
+        pointPathAll.append(pointPath)
+
+
+    #CV.Circle(img,Point(c),20,color,2)
+    
+    if frCount &lt; pl+gapFrames:
+      frCount+=1
+      if frCount&lt;pl:
+        drawAll=[]
+        wellstr=[]
+        for a in range(value.Item1.Count):
+
+          pointPath=pointPathAll[a]
+
+          p=pointPath[frCount]
+          xp=p.X
+          yp=p.Y
+          c=cAll[a]
+          heading=headingAll[a]
+          x=c.X
+          y=c.Y
+
+          if math.isnan(x):
+            wellstr.append("NaN NaN NaN NaN NaN NaN" )
+          else:
+            welldata=(x,y,heading,xp,yp,size)
+            wellstr.append("%i %i %0.3f %i %i %i" % welldata)
+            #wellstr.append("NaN NaN NaN NaN NaN NaN" )
+          
+          #CV.Circle(im,p,size,color,-1)
+          
+
+          xoff=value.Item2[a].Item1
+          yoff=value.Item2[a].Item2
+          xx=xp+xoff
+          yy=yp+yoff
+
+          hArr =value.Item3 #projector-camera calibration matrix
+
+          if math.isnan(xx):
+            xx,yy=0,0
+          else:
+            xx,yy=transf(xx,yy,hArr) ##projector-camera calibration
+
+          drawAll.append([xx,yy])
+        ar=Array[Vector3]([Vector3(2*(xy[0]-xMax/2)/xMax,-2*(xy[1]-yMax/2)/yMax,size) for xy in drawAll])
+        st=" ".join(wellstr)
+      else:
+        ar=Array[Vector3]([Vector3(2*(10-xMax/2)/xMax,-2*(10-yMax/2)/yMax,1)])
+        st='gap'
+    else:
+      frCount=0
+      ar=Array[Vector3]([Vector3(2*(10-xMax/2)/xMax,-2*(10-yMax/2)/yMax,1)])
+      st='gap'
+
+      #img = IplImage(Size(500,500), img.Depth, 3)
+  except:
+    #img = IplImage(Size(500,500), img.Depth, 3)
+    #print traceback.format_exc()
+    ar=Array[Vector3]([Vector3(2*(10-xMax/2)/xMax,-2*(10-yMax/2)/yMax,1)])
+    st='none'
+  #CV.Circle(im,Point(50,50),10,color,-1)
+  return Tuple.Create(ar,st)
+
+def unload():
+  global frCount,pointPath
+  frCount=None
+  pointPath=None
+  ar=None
+  size=None</q4:Script>
+      </Expression>
+      <Expression xsi:type="SubscribeSubject">
+        <Name>trackOut</Name>
       </Expression>
     </Nodes>
     <Edges>
       <Edge>
-        <From>0</From>
-        <To>10</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>1</From>
-        <To>19</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>1</From>
-        <To>2</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>1</From>
-        <To>5</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>2</From>
-        <To>25</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>3</From>
-        <To>4</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
         <From>4</From>
-        <To>6</To>
-        <Label>Source2</Label>
-      </Edge>
-      <Edge>
-        <From>6</From>
-        <To>12</To>
+        <To>0</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
-        <From>6</From>
-        <To>14</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>7</From>
+        <From>5</From>
         <To>1</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
+        <From>6</From>
+        <To>2</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>7</From>
+        <To>3</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
         <From>8</From>
-        <To>9</To>
+        <To>5</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
@@ -567,42 +681,52 @@ def process(inputs):
       </Edge>
       <Edge>
         <From>10</From>
-        <To>7</To>
+        <To>8</To>
         <Label>Source2</Label>
       </Edge>
       <Edge>
-        <From>11</From>
-        <To>7</To>
+        <From>10</From>
+        <To>4</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>11</From>
-        <To>24</To>
+        <To>8</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>12</From>
-        <To>22</To>
-        <Label>Source1</Label>
+        <To>8</To>
+        <Label>Source3</Label>
       </Edge>
       <Edge>
         <From>13</From>
-        <To>22</To>
-        <Label>Source2</Label>
+        <To>9</To>
+        <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>14</From>
-        <To>13</To>
+        <To>9</To>
+        <Label>Source2</Label>
+      </Edge>
+      <Edge>
+        <From>15</From>
+        <To>11</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>16</From>
-        <To>15</To>
+        <To>12</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>17</From>
-        <To>16</To>
+        <To>14</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>17</From>
+        <To>7</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
@@ -610,61 +734,32 @@ def process(inputs):
         <To>17</To>
         <Label>Source1</Label>
       </Edge>
-      <Edge>
-        <From>19</From>
-        <To>17</To>
-        <Label>Source2</Label>
-      </Edge>
-      <Edge>
-        <From>20</From>
-        <To>21</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>22</From>
-        <To>11</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>25</From>
-        <To>23</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>25</From>
-        <To>20</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>26</From>
-        <To>3</To>
-        <Label>Source1</Label>
-      </Edge>
     </Edges>
   </Workflow>
   <ExtensionTypes>
-    <Type>Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.ImageWriter, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.DrawArrays, Bonsai.Shaders, Version=0.16.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.IO.TextWriter, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Scripting.PythonSource, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.IntProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Zip, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Scripting.PythonTransform, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Vision.BackgroundSubtraction, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Expressions.IntProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Take, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Concat, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Reactive.CombineLatest, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Reactive.ToList, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Reactive.Zip, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.joh.Vision.HeadingFromOrientation, BonsaiPackage5, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Vision.LargestBinaryRegion, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Vision.BinaryRegionAnalysis, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Vision.FindContours, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Vision.Threshold, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Vision.Grayscale, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Vision.Crop, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.InputMappingBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Reactive.Concat, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Shaders.DrawArrays, Bonsai.Shaders, Version=0.16.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Shaders.UpdateFrame, Bonsai.Shaders, Version=0.16.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Scripting.PythonSource, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.IntProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Expressions.IntProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Vision.ImageWriter, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Vision.ConvertColor, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.joh.Vision.HeadingFromOrientation, BonsaiPackage5, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.Threshold, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.Grayscale, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.BackgroundSubtraction, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.PointGrey.FlyCapture, Bonsai.PointGrey, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.UpdateFrame, Bonsai.Shaders, Version=0.16.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
   </ExtensionTypes>
 </WorkflowBuilder>
