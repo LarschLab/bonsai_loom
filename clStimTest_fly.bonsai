@@ -503,12 +503,14 @@ startDist=300.
 size=5
 sizeScale=1
 pointPathAll=[]
-speed=5 #px/fr
+speed=2 #px/fr
 ar=Array[Vector3]([Vector3(0.,0.,1)])
 groupSize=9
 groupGap=30*15
 dotGap=1
 gapFrames=dotGap
+stimDir=math.pi/2.
+stimDirOff=-math.pi/3.
 #angleOffset=math.pi/4.
 
 
@@ -534,7 +536,7 @@ def transf(x,y,hArr):
 
 @returns(Tuple[Array[Vector3],str])
 def process(value):
-  global frCount,pointPathAll, size,ar,groupCount,gapFrames
+  global frCount,pointPathAll, size,ar,groupCount,gapFrames,stimDir,stimDirOff
 
   pathLen=startDist-endDist
   pl=int(pathLen/speed)
@@ -569,18 +571,27 @@ def process(value):
         groupCount=0
       
 
-      headingStart=[]
+      #headingStart=[]
       cStart=[]
+      stimDir=-1*stimDir
+      stimDirOff=-1*stimDirOff
 
       for a in range(value.Item1.Count):
-
+      
         c=cAll[a]
-        heading=headingAll[a]
-        headingStart.append(heading)
+        heading=headingAll[a]+stimDirOff
+        
+        #headingStart.append(heading)
         cStart.append(c)
-        x=c.X
-        y=c.Y
+        
+        distance=startDist*0.5
+        rise = math.sin(heading)*distance
+        run = math.cos(heading)*distance
 
+        x=c.X+run
+        y=c.Y+rise
+
+        heading=headingAll[a]+stimDir
         pointPath=[]
         for i in range(pl):
           distance=startDist-i*speed
@@ -645,7 +656,7 @@ def process(value):
       #img = IplImage(Size(500,500), img.Depth, 3)
   except:
     #img = IplImage(Size(500,500), img.Depth, 3)
-    #print traceback.format_exc()
+    print traceback.format_exc()
     ar=Array[Vector3]([Vector3(2*(10-xMax/2)/xMax,-2*(10-yMax/2)/yMax,1)])
     st='none'
   #CV.Circle(im,Point(50,50),10,color,-1)

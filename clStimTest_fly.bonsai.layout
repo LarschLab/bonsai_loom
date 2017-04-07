@@ -85,7 +85,7 @@
     <WindowState>Normal</WindowState>
   </DialogSettings>
   <DialogSettings>
-    <Visible>false</Visible>
+    <Visible>true</Visible>
     <Location>
       <X>211</X>
       <Y>379</Y>
@@ -127,11 +127,11 @@
   <DialogSettings>
     <Visible>true</Visible>
     <Location>
-      <X>744</X>
-      <Y>138</Y>
+      <X>803</X>
+      <Y>312</Y>
     </Location>
     <Size>
-      <Width>967</Width>
+      <Width>984</Width>
       <Height>760</Height>
     </Size>
     <WindowState>Normal</WindowState>
