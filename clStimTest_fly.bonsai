@@ -240,10 +240,10 @@ def process(inputs):
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q1:Crop">
                       <q1:RegionOfInterest>
-                        <q1:X>1043</q1:X>
-                        <q1:Y>1067</q1:Y>
-                        <q1:Width>920</q1:Width>
-                        <q1:Height>920</q1:Height>
+                        <q1:X>1072</q1:X>
+                        <q1:Y>1078</q1:Y>
+                        <q1:Width>910</q1:Width>
+                        <q1:Height>910</q1:Height>
                       </q1:RegionOfInterest>
                     </Combinator>
                   </Expression>
@@ -471,12 +471,12 @@ def process(value):
         <Selector>Source.Item1</Selector>
       </Expression>
       <Expression xsi:type="q3:CsvReader">
-        <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-04-03T14_39_08.csv</q3:FileName>
+        <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-04-06T11_52_45.csv</q3:FileName>
         <q3:ScanPattern>%i %i %i %i %i %i</q3:ScanPattern>
         <q3:SkipRows>0</q3:SkipRows>
       </Expression>
       <Expression xsi:type="q3:CsvReader">
-        <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-04-03T15_00_05.csv</q3:FileName>
+        <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-04-06T13_40_17.csv</q3:FileName>
         <q3:ScanPattern>%s</q3:ScanPattern>
         <q3:SkipRows>0</q3:SkipRows>
       </Expression>
@@ -494,21 +494,22 @@ color = Scalar.Rgb(250,250,250)
 generator = Random()
 xMax=2048.0 #relevant for openGL scaling
 yMax=1280.0
-maxSize=15
+maxSize=20
 minSize=0
 frCount=0
 endDist = 0.
 startDist=300.
 size=5
+sizeScale=1
 pointPathAll=[]
 speed=5 #px/fr
-gapFrames=30*5
+gapFrames=30*1
 ar=Array[Vector3]([Vector3(0.,0.,1)])
 #angleOffset=math.pi/4.
 
 
 def random(generator,minval,maxval):
-  return generator.NextDouble() * (maxval - minval) + minval
+  return int(round(generator.NextDouble() * (maxval - minval) + minval))
 
 def transf(x,y,hArr):
 
@@ -552,7 +553,7 @@ def process(value):
 
     if frCount==0:
       pointPathAll=[]
-      size=random(generator,minSize,maxSize)
+      size=random(generator,minSize,maxSize)*sizeScale
       
 
       headingStart=[]
@@ -595,11 +596,11 @@ def process(value):
           x=c.X
           y=c.Y
 
-          if math.isnan(x):
-            wellstr.append("NaN NaN NaN NaN NaN NaN" )
-          else:
-            welldata=(x,y,heading,xp,yp,size)
-            wellstr.append("%i %i %0.3f %i %i %i" % welldata)
+          #if math.isnan(x):
+          #  wellstr.append("NaN NaN NaN NaN NaN NaN" )
+          #else:
+          welldata=(x,y,heading,xp,yp,size)
+          wellstr.append("%i %i %0.3f %i %i %i" % welldata)
             #wellstr.append("NaN NaN NaN NaN NaN NaN" )
           
           #CV.Circle(im,p,size,color,-1)
