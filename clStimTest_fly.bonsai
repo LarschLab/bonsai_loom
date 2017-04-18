@@ -19,7 +19,7 @@
           <q2:Usage>DynamicDraw</q2:Usage>
           <q2:VertexAttributes>
             <q2:VertexAttributeMapping>
-              <q2:Size>3</q2:Size>
+              <q2:Size>4</q2:Size>
               <q2:Normalized>false</q2:Normalized>
               <q2:Type>Float</q2:Type>
             </q2:VertexAttributeMapping>
@@ -494,7 +494,7 @@ generator = Random()
 
 
 #sizeList=[0,1,2,3,4,6,8,14,20,30,0,1,2]
-sizeList=[0,1,2] # (px) List of dot sizes. Randomly sampled during experiment. Absolute size depends on projector
+sizeList=[5,4,2] # (px) List of dot sizes. Randomly sampled during experiment. Absolute size depends on projector
 
 speed=3 #px/frame
 
@@ -504,19 +504,19 @@ stimDir=math.pi/2. #direction of dot movement away from dot start. Direction is 
 startDist=200. # (px) how far away from centroid dot first appears.
 endDist = 0. # (px) how far dot approaches
 
-groupSize=10 # number of times to repeat same dot size from sizeList
-groupGap=30*10 # (frames) delay before switching to a new size from sizeList
-dotGap=30*5 # (frames) delay between dots of the same size
+groupSize=1 # number of times to repeat same dot size from sizeList
+groupGap=30*2 # (frames) delay before switching to a new size from sizeList
+dotGap=30*1 # (frames) delay between dots of the same size
 
-DotColor = Vector4(0,0,0,1)
-DotColor = Vector4(0,0,0,1)
+DotColor = 1.
+DotColorB = 0.2
 
 #define variables
 frCount=0 #counter for frames since dot presentation
 groupCount=0 #counter for presentations of same dot size
 size=0 #initial dot size set to 0
 pointPathAll=[] #stores dot paths
-ar=Array[Vector3]([Vector3(0.,0.,0)]) # stores (x,y,size) array for openGL sprite drawing
+ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)]) # stores (x,y,size) array for openGL sprite drawing
 gapFrames=dotGap # number of frames before next dot. Automatically set to groupGap or dotGap during experiment.
 
 # random number generator between min and max
@@ -540,7 +540,7 @@ def transf(x,y,h):
   return x,y
 
 
-@returns(Tuple[Array[Vector3],str,Vector4])
+@returns(Tuple[Array[Vector4],str,float])
 def process(value):
   global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,gapFrames,DotColor
 
@@ -574,6 +574,7 @@ def process(value):
 
       if groupCount==0: #start of a new group: randomly select new dot size from list
         sizeInd=random(generator,0,len(sizeList))
+        DotColor=random(generator,0,10)/10.
         size=sizeList[sizeInd]
       if groupCount&lt;groupSize -1:
         gapFrames=dotGap # use dotGap delay before next dot
@@ -675,22 +676,22 @@ def process(value):
               drawAll.append([xx,yy])
 
         #build dot array and output string from all animals
-        ar=Array[Vector3]([Vector3(2*(xy[0]-xMax/2)/xMax,-2*(xy[1]-yMax/2)/yMax,size) for xy in drawAll])
+        ar=Array[Vector4]([Vector4(2*(xy[0]-xMax/2)/xMax,-2*(xy[1]-yMax/2)/yMax,size,DotColor) for xy in drawAll])
         st=" ".join(wellstr)
 
       else: #no drawing array between dot presentations
-        ar=Array[Vector3]([Vector3(0.,0.,0)])
+        ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)])
         st='gap'
     else:
       frCount=0
-      ar=Array[Vector3]([Vector3(0.,0.,0)])
+      ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)])
       st='gap'
 
 
   except:
 
     print traceback.format_exc()
-    ar=Array[Vector3]([Vector3(0.,0.,0)])
+    ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)])
     st='none'
 
   return Tuple.Create(ar,st,DotColor)
@@ -710,12 +711,6 @@ def unload():
       </Expression>
       <Expression xsi:type="SubscribeSubject">
         <Name>trackOut</Name>
-      </Expression>
-      <Expression xsi:type="Combinator">
-        <Combinator xsi:type="q2:UpdateUniform">
-          <q2:UniformName>color</q2:UniformName>
-          <q2:ShaderName>Particles</q2:ShaderName>
-        </Combinator>
       </Expression>
       <Expression xsi:type="MemberSelector">
         <Selector>Source.Item3</Selector>
@@ -804,17 +799,12 @@ def unload():
       </Edge>
       <Edge>
         <From>17</From>
-        <To>20</To>
+        <To>19</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>18</From>
         <To>17</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>20</From>
-        <To>19</To>
         <Label>Source1</Label>
       </Edge>
     </Edges>
@@ -844,6 +834,5 @@ def unload():
     <Type>Bonsai.PointGrey.FlyCapture, Bonsai.PointGrey, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Shaders.UpdateFrame, Bonsai.Shaders, Version=0.16.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Shaders.UpdateUniform, Bonsai.Shaders, Version=0.16.0.0, Culture=neutral, PublicKeyToken=null</Type>
   </ExtensionTypes>
 </WorkflowBuilder>

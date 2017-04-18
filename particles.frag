@@ -1,6 +1,6 @@
 #version 400
 out vec4 fragColor;
-uniform vec4 color = vec4(1,0.2,0.2,1);
+in vec4 spCol;
 
 void main()
 {
@@ -9,7 +9,7 @@ void main()
 
   // fragment is inside the circle when the length is smaller than one
 
-  fragColor = length(position) < 1 ? color : vec4(1,1,1,1);
+  fragColor = length(position) < 1 ? spCol : vec4(1,1,1,1);
 
 
 }
