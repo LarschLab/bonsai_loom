@@ -9,7 +9,7 @@ void main()
 
   // fragment is inside the circle when the length is smaller than one
   //vec4 a = color;
-  fragColor = length(position) < 1 ? vec4(0,0,0,1) : vec4(1,1,1,1);
+  fragColor = length(position) < 1 ? vec4(1,0.2,0.2,1) : vec4(1,1,1,1);
 
   //fragColor = color; //* scale;
 }
