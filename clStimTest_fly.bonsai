@@ -498,10 +498,11 @@ sizeList=[5,4,2] # (px) List of dot sizes. Randomly sampled during experiment. A
 
 speed=3 #px/frame
 
-stimDirOff=-math.pi/4. #direction relative to animal heading where dot first appears. Used together with startDist to determine location of dot start.
-stimDir=math.pi/2. #direction of dot movement away from dot start. Direction is relative to animal heading. pi/2 = perpendicular
+stimDirOff=-math.pi/(180./60) #direction relative to animal heading where dot first appears. Used together with startDist to determine location of dot start.
+stimDirOffB=-math.pi/(180./140)
+stimDir=math.pi/(180./80) #direction of dot movement away from dot start. Direction is relative to animal heading. pi/2 = perpendicular
 
-startDist=200. # (px) how far away from centroid dot first appears.
+startDist=100. # (px) how far away from centroid dot first appears.
 endDist = 0. # (px) how far dot approaches
 
 groupSize=1 # number of times to repeat same dot size from sizeList
@@ -514,7 +515,8 @@ DotColorB = 0.2
 #define variables
 frCount=0 #counter for frames since dot presentation
 groupCount=0 #counter for presentations of same dot size
-size=0 #initial dot size set to 0
+startSize=0 #initial dot size set to 0
+endSize=20
 pointPathAll=[] #stores dot paths
 ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)]) # stores (x,y,size) array for openGL sprite drawing
 gapFrames=dotGap # number of frames before next dot. Automatically set to groupGap or dotGap during experiment.
@@ -542,13 +544,12 @@ def transf(x,y,h):
 
 @returns(Tuple[Array[Vector4],str,float])
 def process(value):
-  global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,gapFrames,DotColor
+  global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,gapFrames,DotColor,stimDirOffB
 
   xMax=value.Item4.Width #2048.0 #relevant for openGL scaling
   yMax=value.Item4.Height #1280.0
 
-  DotPathLength=int((startDist-endDist)/speed) # number of frames dot is visible
-  DotPathLength=2*DotPathLength # for perpendicular stimulus, move dot past animal
+  DotPathLength=int(endSize-startSize) # number of frames dot is visible
 
   hArr =value.Item3 #projector-camera calibration matrix
   h = Mat.FromArray(hArr, 3, 3, Depth.F64, 1)
@@ -573,9 +574,9 @@ def process(value):
       pointPathAll=[]
 
       if groupCount==0: #start of a new group: randomly select new dot size from list
-        sizeInd=random(generator,0,len(sizeList))
-        DotColor=random(generator,0,10)/10.
-        size=sizeList[sizeInd]
+        #sizeInd=random(generator,0,len(sizeList))
+        #DotColor=random(generator,0,10)/10.
+        size=10#sizeList[sizeInd]
       if groupCount&lt;groupSize -1:
         gapFrames=dotGap # use dotGap delay before next dot
         groupCount+=1
@@ -583,39 +584,59 @@ def process(value):
         gapFrames=groupGap # use groupGap delay before next dot
         groupCount=0 # reset groupCount
       
+      #decide left/right and front/back
+
+      left=random(generator,0,100)&lt;50
+      front=random(generator,0,100)&lt;50
 
       # invert direction of stimulus movement and stimulus start location to alternate left and right side
-      stimDir=-1*stimDir 
-      stimDirOff=-1*stimDirOff
-
+      if left:
+        sd=-1*stimDir 
+        if front:
+          sdo=-1*stimDirOff
+          sdoB=-1*stimDirOffB
+        else:
+          sdo=-1*stimDirOffB
+          sdoB=stimDirOff
+      else:
+        sd=stimDir 
+        if front:
+          sdo=stimDirOff
+          sdoB=stimDirOffB
+        else:
+          sdo=stimDirOffB
+          sdoB=stimDirOff
       
+      
+
       for a in range(value.Item1.Count): #loop over animals
       
         #for each arena, test if animal was found and then generate dot path
 
         c=cAll[a]
+        pointPath=[]
         if math.isnan(headingAll[a]): #generate empty path if no animal found
-          for i in range(DotPathLength):
+          for i in range(2):
             pointPath.append(Point(0,0))
 
         else: #actual dot path calculation:
 
           #find dot start point
-          heading=headingAll[a]+stimDirOff #start point direction
-          distance=startDist*0.5 # distance to dot start point (reduced for shifted placement)
+          heading=headingAll[a]+sdo #start point direction
+          distance=startDist # distance to dot start point
           rise = math.sin(heading)*distance
           run = math.cos(heading)*distance
           x=c.X+run
           y=c.Y+rise
+          pointPath.append(Point(x,y))
+          heading=headingAll[a]+sdoB
+          rise = math.sin(heading)*distance
+          run = math.cos(heading)*distance
+          x=c.X+run
+          y=c.Y+rise
+          pointPath.append(Point(x,y))
 
-          #dot positions after start point
-          heading=headingAll[a]+stimDir #e.g. perpendicular to animal
-          pointPath=[]
-          for i in range(DotPathLength):
-            distance=startDist-i*speed
-            rise = math.sin(heading)*distance
-            run = math.cos(heading)*distance
-            pointPath.append(Point(x+run,y+rise))
+
         pointPathAll.append(pointPath)
 
 
@@ -634,7 +655,7 @@ def process(value):
         for a in range(value.Item1.Count): #loop over animals
 
           pointPath=pointPathAll[a] #get entire current dot path (this allows to draw multiple dots from same path)
-          p=pointPath[frCount] #get current frame
+          p=pointPath[0] #get current frame
           xp=p.X #point
           yp=p.Y #point
           c=cAll[a] #get current centroid
@@ -663,20 +684,22 @@ def process(value):
           else:
             
             for i in range(1): #can show multiple dots from the same path 'like a string of pearls'
-              spa=10# len(pointPath)/5  #spacing between points
+              #spa=10# len(pointPath)/5  #spacing between points
               #pf=(frCount+spa*i) % len(pointPath)
-              pf = min([len(pointPath),frCount+spa*i]) #don't go beyond list index
-              p=pointPath[pf]
+              #pf = min([len(pointPath),frCount+spa*i]) #don't go beyond list index
+              p=pointPath[i]
               #r=random(generator,1,5)
               xp=p.X#+r
               yp=p.Y#+r
               xx=xp+xoff
               yy=yp+yoff
               xx,yy=transf(xx,yy,h) ##projector-camera calibration
-              drawAll.append([xx,yy])
+              #drawAll.append([xx,yy,float((1+i*3)/7.),int(frCount/(i+1))])
+
+              drawAll.append([xx,yy,1,int(frCount/(i+2))])
 
         #build dot array and output string from all animals
-        ar=Array[Vector4]([Vector4(2*(xy[0]-xMax/2)/xMax,-2*(xy[1]-yMax/2)/yMax,size,DotColor) for xy in drawAll])
+        ar=Array[Vector4]([Vector4(2*(xy[0]-xMax/2)/xMax,-2*(xy[1]-yMax/2)/yMax,xy[3],xy[2]) for xy in drawAll])
         st=" ".join(wellstr)
 
       else: #no drawing array between dot presentations
