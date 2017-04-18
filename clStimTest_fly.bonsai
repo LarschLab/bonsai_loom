@@ -240,10 +240,10 @@ def process(inputs):
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q1:Crop">
                       <q1:RegionOfInterest>
-                        <q1:X>1048</q1:X>
-                        <q1:Y>1054</q1:Y>
-                        <q1:Width>910</q1:Width>
-                        <q1:Height>910</q1:Height>
+                        <q1:X>1024</q1:X>
+                        <q1:Y>1030</q1:Y>
+                        <q1:Width>946</q1:Width>
+                        <q1:Height>946</q1:Height>
                       </q1:RegionOfInterest>
                     </Combinator>
                   </Expression>
@@ -396,7 +396,7 @@ def process(inputs):
           <Nodes>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="q1:Threshold">
-                <q1:ThresholdValue>20</q1:ThresholdValue>
+                <q1:ThresholdValue>15</q1:ThresholdValue>
                 <q1:MaxValue>255</q1:MaxValue>
                 <q1:ThresholdType>Binary</q1:ThresholdType>
               </Combinator>
@@ -471,12 +471,12 @@ def process(value):
         <Selector>Source.Item1</Selector>
       </Expression>
       <Expression xsi:type="q3:CsvReader">
-        <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-04-12T17_18_28.csv</q3:FileName>
+        <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-04-18T11_46_03.csv</q3:FileName>
         <q3:ScanPattern>%i %i %i %i %i %i</q3:ScanPattern>
         <q3:SkipRows>0</q3:SkipRows>
       </Expression>
       <Expression xsi:type="q3:CsvReader">
-        <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-04-12T17_20_27.csv</q3:FileName>
+        <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-04-18T12_57_22.csv</q3:FileName>
         <q3:ScanPattern>%s</q3:ScanPattern>
         <q3:SkipRows>0</q3:SkipRows>
       </Expression>
@@ -492,36 +492,38 @@ import traceback
 
 color = Scalar.Rgb(250,250,250)
 generator = Random()
-xMax=2048.0 #relevant for openGL scaling
-yMax=1280.0
+
+
 #sizeList=[0,1,2,3,4,6,8,14,20,30,0,1,2]
-sizeList=[0,1,2,5,10,20]
-maxSize=len(sizeList)
-minSize=0
-frCount=0
-groupCount=0
-endDist = 0.
-startDist=300.
-size=0
-sizeScale=1
-pointPathAll=[]
-speed=3 #px/fr
-ar=Array[Vector3]([Vector3(0.,0.,1)])
-groupSize=9
-groupGap=30*10
-dotGap=30*5
-gapFrames=dotGap
-stimDir=math.pi/2.
-stimDirOff=-math.pi/4.
-#angleOffset=math.pi/4.
+sizeList=[0,1,2] # (px) List of dot sizes. Randomly sampled during experiment. Absolute size depends on projector
+
+speed=3 #px/frame
+
+stimDirOff=-math.pi/4. #direction relative to animal heading where dot first appears. Used together with startDist to determine location of dot start.
+stimDir=math.pi/2. #direction of dot movement away from dot start. Direction is relative to animal heading. pi/2 = perpendicular
+
+startDist=200. # (px) how far away from centroid dot first appears.
+endDist = 0. # (px) how far dot approaches
+
+groupSize=10 # number of times to repeat same dot size from sizeList
+groupGap=30*10 # (frames) delay before switching to a new size from sizeList
+dotGap=30*5 # (frames) delay between dots of the same size
 
 
+#define variables
+frCount=0 #counter for frames since dot presentation
+groupCount=0 #counter for presentations of same dot size
+size=0 #initial dot size set to 0
+pointPathAll=[] #stores dot paths
+ar=Array[Vector3]([Vector3(0.,0.,0)]) # stores (x,y,size) array for openGL sprite drawing
+gapFrames=dotGap 
+
+# random number generator between min and max
 def random(generator,minval,maxval):
   return int(round(generator.NextDouble() * (maxval - minval) + minval))
 
-def transf(x,y,hArr):
-
-  h = Mat.FromArray(hArr, 3, 3, Depth.F64, 1)
+# perspective transformation using calibration matrix to match camera and projector coordinates
+def transf(x,y,h):
 
   values1 = Array[float]([x,y])
   values2 = Array[float]([1,1])
@@ -536,21 +538,23 @@ def transf(x,y,hArr):
 
   return x,y
 
+
 @returns(Tuple[Array[Vector3],str])
 def process(value):
-  global frCount,pointPathAll, size,ar,groupCount,gapFrames,stimDir,stimDirOff
+  global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,gapFrames
+
+  xMax=value.Item4.Width #2048.0 #relevant for openGL scaling
+  yMax=value.Item4.Height #1280.0
 
   pathLen=startDist-endDist
   pl=int(2*pathLen/speed)
 
-  #imgIn=value.Item4
-  #im = imgIn.Clone()
-  #CV.Copy(img,imgIn)
-
-
+  hArr =value.Item3 #projector-camera calibration matrix
+  h = Mat.FromArray(hArr, 3, 3, Depth.F64, 1)
 
   cAll=[]
   headingAll=[]
+
   for a in range(value.Item1.Count):
     c=value.Item1[a].Centroid
     heading=value.Item1[a].Orientation
@@ -563,9 +567,9 @@ def process(value):
       pointPathAll=[]
 
       if groupCount==0:
-        sizeInd=random(generator,minSize,maxSize)*sizeScale
+        sizeInd=random(generator,0,len(sizeList))
         size=sizeList[sizeInd]
-      if groupCount&lt;groupSize:
+      if groupCount&lt;groupSize -1:
         gapFrames=dotGap
         groupCount+=1
       else:
@@ -611,6 +615,7 @@ def process(value):
     #CV.Circle(img,Point(c),20,color,2)
     
     if frCount &lt; pl+gapFrames:
+      
       frCount+=1
       if frCount&lt;pl:
         drawAll=[]
@@ -642,7 +647,7 @@ def process(value):
           xx=xp+xoff
           yy=yp+yoff
 
-          hArr =value.Item3 #projector-camera calibration matrix
+          
 
           if math.isnan(xx):
             xx,yy=0,0
@@ -660,34 +665,40 @@ def process(value):
               yp=p.Y#+r
               xx=xp+xoff
               yy=yp+yoff
-              xx,yy=transf(xx,yy,hArr) ##projector-camera calibration
+              xx,yy=transf(xx,yy,h) ##projector-camera calibration
               drawAll.append([xx,yy])
 
         ar=Array[Vector3]([Vector3(2*(xy[0]-xMax/2)/xMax,-2*(xy[1]-yMax/2)/yMax,size) for xy in drawAll])
         st=" ".join(wellstr)
       else:
-        ar=Array[Vector3]([Vector3(2*(10-xMax/2)/xMax,-2*(10-yMax/2)/yMax,1)])
+        ar=Array[Vector3]([Vector3(0.,0.,0)])
         st='gap'
     else:
       frCount=0
-      ar=Array[Vector3]([Vector3(2*(10-xMax/2)/xMax,-2*(10-yMax/2)/yMax,1)])
+      ar=Array[Vector3]([Vector3(0.,0.,0)])
       st='gap'
 
       #img = IplImage(Size(500,500), img.Depth, 3)
   except:
     #img = IplImage(Size(500,500), img.Depth, 3)
     print traceback.format_exc()
-    ar=Array[Vector3]([Vector3(2*(10-xMax/2)/xMax,-2*(10-yMax/2)/yMax,1)])
+    ar=Array[Vector3]([Vector3(0.,0.,0)])
     st='none'
   #CV.Circle(im,Point(50,50),10,color,-1)
   return Tuple.Create(ar,st)
 
 def unload():
-  global frCount,pointPath
+  global frCount,pointPathAll, size,ar,groupCount,stimDir,stimDirOff,gapFrames
   frCount=None
-  pointPath=None
+  pointPathAll=None
   ar=None
-  size=None</q4:Script>
+  size=None
+  groupCount=None
+  stimDir=None
+  stimDirOff=None
+  gapFrames=None
+
+</q4:Script>
       </Expression>
       <Expression xsi:type="SubscribeSubject">
         <Name>trackOut</Name>

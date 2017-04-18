@@ -92,7 +92,7 @@
     </Location>
     <Size>
       <Width>645</Width>
-      <Height>236</Height>
+      <Height>754</Height>
     </Size>
     <WindowState>Normal</WindowState>
     <VisualizerTypeName>Bonsai.Design.ObjectTextVisualizer</VisualizerTypeName>
@@ -127,12 +127,12 @@
   <DialogSettings>
     <Visible>true</Visible>
     <Location>
-      <X>120</X>
-      <Y>428</Y>
+      <X>200</X>
+      <Y>200</Y>
     </Location>
     <Size>
-      <Width>623</Width>
-      <Height>557</Height>
+      <Width>1111</Width>
+      <Height>803</Height>
     </Size>
     <WindowState>Normal</WindowState>
     <VisualizerTypeName>Bonsai.Vision.Design.IplImageVisualizer</VisualizerTypeName>
