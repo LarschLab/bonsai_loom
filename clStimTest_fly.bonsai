@@ -308,6 +308,9 @@ def process(inputs):
             <Expression xsi:type="MemberSelector">
               <Selector>Source.Item2</Selector>
             </Expression>
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Item4</Selector>
+            </Expression>
           </Nodes>
           <Edges>
             <Edge>
@@ -356,6 +359,11 @@ def process(inputs):
               <Label>Source1</Label>
             </Edge>
             <Edge>
+              <From>4</From>
+              <To>10</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
               <From>6</From>
               <To>3</To>
               <Label>Source3</Label>
@@ -374,6 +382,11 @@ def process(inputs):
               <From>9</From>
               <To>3</To>
               <Label>Source4</Label>
+            </Edge>
+            <Edge>
+              <From>10</From>
+              <To>3</To>
+              <Label>Source5</Label>
             </Edge>
           </Edges>
         </Workflow>
@@ -489,25 +502,27 @@ clr.AddReference("OpenCV.Net")
 from OpenCV.Net import *
 import math
 import traceback
+import random
 
 generator = Random()
 
 
-#sizeList=[0,1,2,3,4,6,8,14,20,30,0,1,2]
-sizeList=[5,4,2] # (px) List of dot sizes. Randomly sampled during experiment. Absolute size depends on projector
 
-speed=3 #px/frame
+speed=1 #px/frame
 
-stimDirOff=-math.pi/(180./60) #direction relative to animal heading where dot first appears. Used together with startDist to determine location of dot start.
-stimDirOffB=-math.pi/(180./140)
-stimDir=math.pi/(180./80) #direction of dot movement away from dot start. Direction is relative to animal heading. pi/2 = perpendicular
+stimDirOff=-math.pi/(180./50) #direction relative to animal heading where dot first appears. Used together with startDist to determine location of dot start.
+stimDirOffB=-math.pi/(180./130)
+stimDir=math.pi/(180./90) #direction of dot movement away from dot start. Direction is relative to animal heading. pi/2 = perpendicular
 
-startDist=100. # (px) how far away from centroid dot first appears.
+startDist=75. # (px) how far away from centroid dot first appears.
 endDist = 0. # (px) how far dot approaches
 
 groupSize=1 # number of times to repeat same dot size from sizeList
 groupGap=30*120 # (frames) delay before switching to a new size from sizeList
 dotGap=30*120 # (frames) delay between dots of the same size
+
+preGap=30*5
+postGap=30*5
 
 DotColor = 1.
 DotColorB = 0.2
@@ -516,14 +531,16 @@ DotColorB = 0.2
 frCount=0 #counter for frames since dot presentation
 groupCount=0 #counter for presentations of same dot size
 startSize=0 #initial dot size set to 0
-endSize=20
+endSize=30
 pointPathAll=[] #stores dot paths
 ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)]) # stores (x,y,size) array for openGL sprite drawing
 gapFrames=dotGap # number of frames before next dot. Automatically set to groupGap or dotGap during experiment.
 left=0
 front=0
+stimList=[]
+sAll=[]
 # random number generator between min and max
-def random(generator,minval,maxval):
+def randomFunc(generator,minval,maxval):
   return int(round(generator.NextDouble() * (maxval - minval) + minval))
 
 # perspective transformation using calibration matrix to match camera and projector coordinates
@@ -545,8 +562,9 @@ def transf(x,y,h):
 
 @returns(Tuple[Array[Vector4],str,float])
 def process(value):
-  global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,gapFrames,DotColor,stimDirOffB,left,front
+  global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,gapFrames,DotColor,stimDirOffB,left,front,stimList,sAll
 
+  episode=99
   xMax=value.Item4.Width #2048.0 #relevant for openGL scaling
   yMax=value.Item4.Height #1280.0
 
@@ -575,11 +593,19 @@ def process(value):
       pointPathAll=[]
 
       if groupCount==0: #start of a new group: randomly select new dot size from list
-        #sizeInd=random(generator,0,len(sizeList))
-        #DotColor=random(generator,0,10)/10.
+        #sizeInd=randomFunc(generator,0,len(sizeList))
+        #DotColor=randomFunc(generator,0,10)/10.
         size=10#sizeList[sizeInd]
-      if groupCount&lt;groupSize -1:
+        if len(stimList)==0:
+          stimList=value.Item5
+        else:
+          random.shuffle(stimList,random.random)
+
+      if groupCount&lt;len(stimList):
         gapFrames=dotGap # use dotGap delay before next dot
+        
+        left=stimList[groupCount].Item3
+        sAll=[stimList[groupCount].Item1,stimList[groupCount].Item2]
         groupCount+=1
       else:
         gapFrames=groupGap # use groupGap delay before next dot
@@ -587,26 +613,20 @@ def process(value):
       
       #decide left/right and front/back
 
-      left=random(generator,0,100)&lt;50
-      front=random(generator,0,100)&lt;50
+      #left=random(generator,0,100)&lt;50
+      #front=random(generator,0,100)&lt;50
 
       # invert direction of stimulus movement and stimulus start location to alternate left and right side
       if left:
         sd=-1*stimDir 
-        if front:
-          sdo=-1*stimDirOff
-          sdoB=-1*stimDirOffB
-        else:
-          sdo=-1*stimDirOffB
-          sdoB=stimDirOff
+        sdo=-1*stimDirOff
+        sdoB=-1*stimDirOffB
+
       else:
         sd=stimDir 
-        if front:
-          sdo=stimDirOff
-          sdoB=stimDirOffB
-        else:
-          sdo=stimDirOffB
-          sdoB=stimDirOff
+        sdo=stimDirOff
+        sdoB=stimDirOffB
+
       
       
 
@@ -645,11 +665,23 @@ def process(value):
 
     # in each frame, decide if dot should draw
 
-    if frCount &lt; DotPathLength+gapFrames: # outer loop for each dot presentation
+
+
+    if frCount &lt; DotPathLength+gapFrames+preGap+postGap: # outer loop for each dot presentation
       
       frCount+=1
-      if frCount&lt;DotPathLength: # still have dot path to show
 
+      if frCount-(preGap+postGap)&lt;DotPathLength: # still have dot path to show
+
+        if frCount&lt;preGap:
+          sizeNow=[0,0]
+          episode=0
+        elif frCount&gt;DotPathLength+preGap:
+          sizeNow=[0,0]
+          episode=2
+        else:
+          sizeNow=sAll
+          episode=1
         drawAll=[] #list of all dot coordinates
         wellstr=[] #string output of animal and dot data for file output
 
@@ -659,6 +691,9 @@ def process(value):
           p=pointPath[0] #get current frame
           xp=p.X #point
           yp=p.Y #point
+          p2=pointPath[1]
+          xp2=p2.X
+          yp2=p2.Y
           c=cAll[a] #get current centroid
           heading=headingAll[a]
           x=c.X #animal
@@ -668,11 +703,12 @@ def process(value):
 
           #if no animal was found, x=NaN --&gt; output NaN for this animal
           if math.isnan(x):
-            wellstr.append("NaN NaN NaN NaN NaN %i NaN NaN" % size)
+            wellstr.append("NaN NaN NaN NaN NaN NaN NaN")
           else:
-            welldata=(x,y,heading,xp,yp,size,int(left),int(front)) 
-            wellstr.append("%i %i %0.3f %i %i %i %i %i" % welldata)
-
+            welldata=(x,y,heading,xp,yp,xp2,yp2) 
+            wellstr.append("%i %i %0.3f %i %i %i %i" % welldata)
+            
+            
           #add arena offset to point coordinates for display
           xoff=value.Item2[a].Item1
           yoff=value.Item2[a].Item2
@@ -681,10 +717,11 @@ def process(value):
 
           if math.isnan(xx):
             xx,yy=0,0
-            drawAll.append([xx,yy])
+            drawAll.append([xx,yy,0,0])
+            drawAll.append([xx,yy,0,0])
           else:
             
-            for i in range(1): #can show multiple dots from the same path 'like a string of pearls'
+            for i in range(2): #can show multiple dots from the same path 'like a string of pearls'
               #spa=10# len(pointPath)/5  #spacing between points
               #pf=(frCount+spa*i) % len(pointPath)
               #pf = min([len(pointPath),frCount+spa*i]) #don't go beyond list index
@@ -696,9 +733,11 @@ def process(value):
               yy=yp+yoff
               xx,yy=transf(xx,yy,h) ##projector-camera calibration
               #drawAll.append([xx,yy,float((1+i*3)/7.),int(frCount/(i+1))])
+              currSize=int(sizeNow[i]*(frCount-preGap)/2.)
+              drawAll.append([xx,yy,1,currSize])
 
-              drawAll.append([xx,yy,1,int(frCount/(i+2))])
-
+        welldata=(sizeNow[0],sizeNow[1],left,episode) 
+        wellstr.append("%i %i %i %i" % welldata)
         #build dot array and output string from all animals
         ar=Array[Vector4]([Vector4(2*(xy[0]-xMax/2)/xMax,-2*(xy[1]-yMax/2)/yMax,xy[3],xy[2]) for xy in drawAll])
         st=" ".join(wellstr)
@@ -721,7 +760,7 @@ def process(value):
   return Tuple.Create(ar,st,DotColor)
 
 def unload():
-  global frCount,pointPathAll, size,ar,groupCount,stimDir,stimDirOff,gapFrames
+  global frCount,pointPathAll, size,ar,groupCount,stimDir,stimDirOff,gapFrames,stimList,sAll
   frCount=None
   pointPathAll=None
   ar=None
@@ -730,7 +769,8 @@ def unload():
   stimDir=None
   stimDirOff=None
   gapFrames=None
-
+  stimList=None
+  sAll=None
 </q4:Script>
       </Expression>
       <Expression xsi:type="SubscribeSubject">
@@ -738,6 +778,14 @@ def unload():
       </Expression>
       <Expression xsi:type="MemberSelector">
         <Selector>Source.Item3</Selector>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="ToList" />
+      </Expression>
+      <Expression xsi:type="q3:CsvReader">
+        <q3:FileName>E:\00_bonsai_ffmpeg_out\stimLists\16xCompetition.txt</q3:FileName>
+        <q3:ScanPattern>%i %i %i</q3:ScanPattern>
+        <q3:SkipRows>0</q3:SkipRows>
       </Expression>
     </Nodes>
     <Edges>
@@ -829,6 +877,16 @@ def unload():
       <Edge>
         <From>18</From>
         <To>17</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>20</From>
+        <To>8</To>
+        <Label>Source4</Label>
+      </Edge>
+      <Edge>
+        <From>21</From>
+        <To>20</To>
         <Label>Source1</Label>
       </Edge>
     </Edges>
