@@ -409,7 +409,7 @@ def process(inputs):
           <Nodes>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="q1:Threshold">
-                <q1:ThresholdValue>18</q1:ThresholdValue>
+                <q1:ThresholdValue>15</q1:ThresholdValue>
                 <q1:MaxValue>255</q1:MaxValue>
                 <q1:ThresholdType>Binary</q1:ThresholdType>
               </Combinator>
@@ -420,7 +420,7 @@ def process(inputs):
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="q1:BackgroundSubtraction">
                 <q1:BackgroundFrames>120</q1:BackgroundFrames>
-                <q1:AdaptationRate>0.001</q1:AdaptationRate>
+                <q1:AdaptationRate>0.0001</q1:AdaptationRate>
                 <q1:ThresholdValue>0</q1:ThresholdValue>
                 <q1:ThresholdType>ToZero</q1:ThresholdType>
                 <q1:SubtractionMethod>Dark</q1:SubtractionMethod>
@@ -518,11 +518,11 @@ startDist=75. # (px) how far away from centroid dot first appears.
 endDist = 0. # (px) how far dot approaches
 
 groupSize=1 # number of times to repeat same dot size from sizeList
-groupGap=30*120 # (frames) delay before switching to a new size from sizeList
-dotGap=30*120 # (frames) delay between dots of the same size
+groupGap=30*1 # (frames) delay before switching to a new size from sizeList
+dotGap=30*1 # (frames) delay between dots of the same size
 
-preGap=30*5
-postGap=30*5
+preGap=30*1
+postGap=30*1
 
 DotColor = 1.
 DotColorB = 0.2
@@ -531,7 +531,7 @@ DotColorB = 0.2
 frCount=0 #counter for frames since dot presentation
 groupCount=0 #counter for presentations of same dot size
 startSize=0 #initial dot size set to 0
-endSize=20
+endSize=15
 pointPathAll=[] #stores dot paths
 ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)]) # stores (x,y,size) array for openGL sprite drawing
 gapFrames=dotGap # number of frames before next dot. Automatically set to groupGap or dotGap during experiment.
@@ -733,7 +733,7 @@ def process(value):
               yy=yp+yoff
               xx,yy=transf(xx,yy,h) ##projector-camera calibration
               #drawAll.append([xx,yy,float((1+i*3)/7.),int(frCount/(i+1))])
-              currSize=int(sizeNow[i]*(frCount-preGap)/2.)
+              currSize=int(sizeNow[i]*(frCount-preGap))*speed
               drawAll.append([xx,yy,1,currSize])
 
         welldata=(sizeNow[0],sizeNow[1],left,episode) 
