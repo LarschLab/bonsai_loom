@@ -409,7 +409,7 @@ def process(inputs):
           <Nodes>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="q1:Threshold">
-                <q1:ThresholdValue>15</q1:ThresholdValue>
+                <q1:ThresholdValue>18</q1:ThresholdValue>
                 <q1:MaxValue>255</q1:MaxValue>
                 <q1:ThresholdType>Binary</q1:ThresholdType>
               </Combinator>
@@ -420,7 +420,7 @@ def process(inputs):
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="q1:BackgroundSubtraction">
                 <q1:BackgroundFrames>120</q1:BackgroundFrames>
-                <q1:AdaptationRate>0.0001</q1:AdaptationRate>
+                <q1:AdaptationRate>0.001</q1:AdaptationRate>
                 <q1:ThresholdValue>0</q1:ThresholdValue>
                 <q1:ThresholdType>ToZero</q1:ThresholdType>
                 <q1:SubtractionMethod>Dark</q1:SubtractionMethod>
@@ -531,7 +531,7 @@ DotColorB = 0.2
 frCount=0 #counter for frames since dot presentation
 groupCount=0 #counter for presentations of same dot size
 startSize=0 #initial dot size set to 0
-endSize=30
+endSize=20
 pointPathAll=[] #stores dot paths
 ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)]) # stores (x,y,size) array for openGL sprite drawing
 gapFrames=dotGap # number of frames before next dot. Automatically set to groupGap or dotGap during experiment.
@@ -585,7 +585,7 @@ def process(value):
 
   try: #big loop to process for each frame
 
-    if frCount==0: #begin presentation of a new dot
+    if frCount==preGap: #begin presentation of a new dot
 
       #pre-calculate dot paths for all animals
       #(dot paths are not updates as the animal moves)
