@@ -489,7 +489,7 @@ def process(value):
         <q3:SkipRows>0</q3:SkipRows>
       </Expression>
       <Expression xsi:type="q3:CsvReader">
-        <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-04-18T12_57_22.csv</q3:FileName>
+        <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-04-21T11_27_25.csv</q3:FileName>
         <q3:ScanPattern>%s</q3:ScanPattern>
         <q3:SkipRows>0</q3:SkipRows>
       </Expression>
@@ -510,31 +510,33 @@ generator = Random()
 
 speed=1 #px/frame
 
-stimDirOff=-math.pi/(180./50) #direction relative to animal heading where dot first appears. Used together with startDist to determine location of dot start.
-stimDirOffB=-math.pi/(180./130)
+stimDirOff=-math.pi/(180./45) #direction relative to animal heading where dot first appears. Used together with startDist to determine location of dot start.
+stimDirOffB=-math.pi/(180./135)
 stimDir=math.pi/(180./90) #direction of dot movement away from dot start. Direction is relative to animal heading. pi/2 = perpendicular
 
 startDist=75. # (px) how far away from centroid dot first appears.
 endDist = 0. # (px) how far dot approaches
 
 groupSize=1 # number of times to repeat same dot size from sizeList
-groupGap=30*1 # (frames) delay before switching to a new size from sizeList
-dotGap=30*1 # (frames) delay between dots of the same size
+groupGap=30*60*5 # (frames) delay before switching to a new size from sizeList
+dotGap=30*60*5 # (frames) delay between dots of the same size
 
-preGap=30*1
-postGap=30*1
+preGap=30*5
+postGap=30*5
 
 DotColor = 1.
 DotColorB = 0.2
 
 #define variables
-frCount=0 #counter for frames since dot presentation
+
 groupCount=0 #counter for presentations of same dot size
 startSize=0 #initial dot size set to 0
 endSize=15
+iSize=[0,1.5,2]
 pointPathAll=[] #stores dot paths
 ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)]) # stores (x,y,size) array for openGL sprite drawing
 gapFrames=dotGap # number of frames before next dot. Automatically set to groupGap or dotGap during experiment.
+frCount=200#int(endSize+preGap+1) #counter for frames since dot presentation
 left=0
 front=0
 stimList=[]
@@ -585,7 +587,7 @@ def process(value):
 
   try: #big loop to process for each frame
 
-    if frCount==preGap: #begin presentation of a new dot
+    if frCount==preGap-1: #begin presentation of a new dot
 
       #pre-calculate dot paths for all animals
       #(dot paths are not updates as the animal moves)
@@ -598,6 +600,8 @@ def process(value):
         size=10#sizeList[sizeInd]
         if len(stimList)==0:
           stimList=value.Item5
+          random.shuffle(stimList,random.random)
+          gapFrames=100
         else:
           random.shuffle(stimList,random.random)
 
@@ -677,6 +681,13 @@ def process(value):
           sizeNow=[0,0]
           episode=0
         elif frCount&gt;DotPathLength+preGap:
+          pointPathAll=[]
+          for a in range(value.Item1.Count):
+            pointPath=[]
+            for i in range(2):
+              pointPath.append(Point(0,0))
+            pointPathAll.append(pointPath)
+
           sizeNow=[0,0]
           episode=2
         else:
@@ -720,11 +731,9 @@ def process(value):
             drawAll.append([xx,yy,0,0])
             drawAll.append([xx,yy,0,0])
           else:
-            
-            for i in range(2): #can show multiple dots from the same path 'like a string of pearls'
-              #spa=10# len(pointPath)/5  #spacing between points
-              #pf=(frCount+spa*i) % len(pointPath)
-              #pf = min([len(pointPath),frCount+spa*i]) #don't go beyond list index
+            currSize=[]
+            for i in range(2): #can show multiple dots
+
               p=pointPath[i]
               #r=random(generator,1,5)
               xp=p.X#+r
@@ -733,10 +742,10 @@ def process(value):
               yy=yp+yoff
               xx,yy=transf(xx,yy,h) ##projector-camera calibration
               #drawAll.append([xx,yy,float((1+i*3)/7.),int(frCount/(i+1))])
-              currSize=int(sizeNow[i]*(frCount-preGap))*speed
-              drawAll.append([xx,yy,1,currSize])
+              currSize.append(int(iSize[sizeNow[i]]*(frCount-preGap))*speed)
+              drawAll.append([xx,yy,1,currSize[i]])
 
-        welldata=(sizeNow[0],sizeNow[1],left,episode) 
+        welldata=(currSize[0],currSize[1],left,episode) 
         wellstr.append("%i %i %i %i" % welldata)
         #build dot array and output string from all animals
         ar=Array[Vector4]([Vector4(2*(xy[0]-xMax/2)/xMax,-2*(xy[1]-yMax/2)/yMax,xy[3],xy[2]) for xy in drawAll])

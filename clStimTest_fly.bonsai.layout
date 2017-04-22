@@ -96,11 +96,11 @@
     <Visible>true</Visible>
     <Location>
       <X>132</X>
-      <Y>578</Y>
+      <Y>358</Y>
     </Location>
     <Size>
       <Width>1116</Width>
-      <Height>84</Height>
+      <Height>114</Height>
     </Size>
     <WindowState>Normal</WindowState>
     <VisualizerTypeName>Bonsai.Design.ObjectTextVisualizer</VisualizerTypeName>
