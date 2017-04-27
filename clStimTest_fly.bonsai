@@ -240,10 +240,10 @@ def process(inputs):
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q1:Crop">
                       <q1:RegionOfInterest>
-                        <q1:X>1024</q1:X>
-                        <q1:Y>1030</q1:Y>
-                        <q1:Width>946</q1:Width>
-                        <q1:Height>946</q1:Height>
+                        <q1:X>1372</q1:X>
+                        <q1:Y>1372</q1:Y>
+                        <q1:Width>634</q1:Width>
+                        <q1:Height>634</q1:Height>
                       </q1:RegionOfInterest>
                     </Combinator>
                   </Expression>
@@ -409,7 +409,7 @@ def process(inputs):
           <Nodes>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="q1:Threshold">
-                <q1:ThresholdValue>15</q1:ThresholdValue>
+                <q1:ThresholdValue>12</q1:ThresholdValue>
                 <q1:MaxValue>255</q1:MaxValue>
                 <q1:ThresholdType>Binary</q1:ThresholdType>
               </Combinator>
@@ -484,12 +484,12 @@ def process(value):
         <Selector>Source.Item1</Selector>
       </Expression>
       <Expression xsi:type="q3:CsvReader">
-        <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-04-18T11_46_03.csv</q3:FileName>
+        <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-04-27T09_46_10.csv</q3:FileName>
         <q3:ScanPattern>%i %i %i %i %i %i</q3:ScanPattern>
         <q3:SkipRows>0</q3:SkipRows>
       </Expression>
       <Expression xsi:type="q3:CsvReader">
-        <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-04-21T11_27_25.csv</q3:FileName>
+        <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-04-27T09_55_01.csv</q3:FileName>
         <q3:ScanPattern>%s</q3:ScanPattern>
         <q3:SkipRows>0</q3:SkipRows>
       </Expression>
@@ -518,11 +518,11 @@ startDist=75. # (px) how far away from centroid dot first appears.
 endDist = 0. # (px) how far dot approaches
 
 groupSize=1 # number of times to repeat same dot size from sizeList
-groupGap=30*60*5 # (frames) delay before switching to a new size from sizeList
-dotGap=30*60*5 # (frames) delay between dots of the same size
+groupGap=30*10 # (frames) delay before switching to a new size from sizeList
+dotGap=30*10 # (frames) delay between dots of the same size
 
-preGap=30*5
-postGap=30*5
+preGap=30*2
+postGap=30*2
 
 DotColor = 1.
 DotColorB = 0.2
@@ -785,8 +785,8 @@ def unload():
       <Expression xsi:type="SubscribeSubject">
         <Name>trackOut</Name>
       </Expression>
-      <Expression xsi:type="MemberSelector">
-        <Selector>Source.Item3</Selector>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="CombineLatest" />
       </Expression>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="ToList" />
@@ -795,6 +795,294 @@ def unload():
         <q3:FileName>E:\00_bonsai_ffmpeg_out\stimLists\16xCompetition.txt</q3:FileName>
         <q3:ScanPattern>%i %i %i</q3:ScanPattern>
         <q3:SkipRows>0</q3:SkipRows>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="StringProperty">
+          <Value>gap</Value>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="CombineLatest" />
+      </Expression>
+      <Expression xsi:type="Equal" />
+      <Expression xsi:type="Condition">
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="WorkflowInput">
+              <Name>Source1</Name>
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Item1</Selector>
+            </Expression>
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>0</From>
+              <To>2</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>2</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
+      </Expression>
+      <Expression xsi:type="NestedWorkflow">
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q2:DrawMesh">
+                <q2:ShaderName>Waveform</q2:ShaderName>
+                <q2:MeshName>Waveform</q2:MeshName>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q2:UpdateUniform">
+                <q2:UniformName>frequency</q2:UniformName>
+                <q2:ShaderName>Waveform</q2:ShaderName>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q2:UpdateVertexBuffer">
+                <q2:MeshName>Waveform</q2:MeshName>
+                <q2:DrawMode>Points</q2:DrawMode>
+                <q2:Usage>DynamicDraw</q2:Usage>
+                <q2:VertexAttributes>
+                  <q2:VertexAttributeMapping>
+                    <q2:Size>2</q2:Size>
+                    <q2:Normalized>false</q2:Normalized>
+                    <q2:Type>Double</q2:Type>
+                  </q2:VertexAttributeMapping>
+                </q2:VertexAttributes>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q2:UpdateUniform">
+                <q2:UniformName>phase</q2:UniformName>
+                <q2:ShaderName>Waveform</q2:ShaderName>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="FloatProperty">
+                <Value>20</Value>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Item1</Selector>
+            </Expression>
+            <Expression xsi:type="q4:ExpressionTransform">
+              <q4:Expression>single(it)</q4:Expression>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="CombineLatest" />
+            </Expression>
+            <Expression xsi:type="Accumulate" />
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Take">
+                <Count>5</Count>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="q4:PythonTransform">
+              <q4:Script>import clr
+clr.AddReference("OpenTK")
+from OpenTK import Vector2, Vector3
+from System import Array, Single, Random,Tuple
+clr.AddReference("OpenCV.Net")
+from OpenCV.Net import *
+
+xMax=2048.0 #relevant for openGL scaling
+yMax=xMax
+
+def transf(x,y,hArr):
+
+  h = Mat.FromArray(hArr, 3, 3, Depth.F64, 1)
+
+  values1 = Array[float]([x,y])
+  values2 = Array[float]([1,1])
+
+  point = Mat.FromArray(values1, 1, 1, Depth.F64,2)
+  out = Mat.FromArray(values2, 1, 1, Depth.F64,2)
+
+  CV.PerspectiveTransform(point,out,h)
+
+  x=out.Item[0].Val0
+  y=out.Item[0].Val1
+
+  return x,y
+
+@returns(Mat)
+def process(value):
+  hArr =value.Item2
+
+
+  x = [r.Item4 for r in value.Item1]
+  y = [r.Item5 for r in value.Item1]
+  scale=xMax/31.
+  for i in range(len(x)):
+    
+    
+    
+    x[i]=x[i]-(scale*(x[i]-xMax/2.)/(75*scale))
+    y[i]=y[i]-(scale*(y[i]-yMax/2.)/(75*scale))
+    x[i],y[i]=transf(x[i],y[i],hArr)
+    x[i]=(2*(x[i]-xMax/2))/xMax
+    y[i]=(-2*(y[i]-yMax/2))/yMax
+
+  
+  xy=sum(zip(x, y), ()) 
+
+  xyA = Array[float](xy)
+
+
+  xym = Mat.FromArray(xyA, len(value.Item1), 2, Depth.F64, 1)
+
+  return xym</q4:Script>
+            </Expression>
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Item2.EventArgs.Time</Selector>
+            </Expression>
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Item3,Source.Item4</Selector>
+            </Expression>
+            <Expression xsi:type="Condition">
+              <Workflow>
+                <Nodes>
+                  <Expression xsi:type="WorkflowInput">
+                    <Name>Source1</Name>
+                  </Expression>
+                  <Expression xsi:type="WorkflowOutput" />
+                  <Expression xsi:type="MemberSelector">
+                    <Selector>Source.Item1</Selector>
+                  </Expression>
+                </Nodes>
+                <Edges>
+                  <Edge>
+                    <From>0</From>
+                    <To>2</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>2</From>
+                    <To>1</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                </Edges>
+              </Workflow>
+            </Expression>
+            <Expression xsi:type="WorkflowInput">
+              <Name>Source1</Name>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="FloatProperty">
+                <Value>5</Value>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Zip" />
+            </Expression>
+            <Expression xsi:type="Multiply" />
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>0</From>
+              <To>4</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>3</From>
+              <To>0</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>4</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>5</From>
+              <To>2</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>6</From>
+              <To>16</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>6</From>
+              <To>15</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>7</From>
+              <To>5</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>8</From>
+              <To>6</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>9</From>
+              <To>7</To>
+              <Label>Source2</Label>
+            </Edge>
+            <Edge>
+              <From>10</From>
+              <To>7</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>11</From>
+              <To>8</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>11</From>
+              <To>9</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>12</From>
+              <To>10</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>13</From>
+              <To>11</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>13</From>
+              <To>12</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>14</From>
+              <To>13</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>15</From>
+              <To>16</To>
+              <Label>Source2</Label>
+            </Edge>
+            <Edge>
+              <From>16</From>
+              <To>17</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>17</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
       </Expression>
     </Nodes>
     <Edges>
@@ -819,6 +1107,11 @@ def unload():
         <Label>Source1</Label>
       </Edge>
       <Edge>
+        <From>7</From>
+        <To>23</To>
+        <Label>Source2</Label>
+      </Edge>
+      <Edge>
         <From>8</From>
         <To>5</To>
         <Label>Source1</Label>
@@ -830,13 +1123,18 @@ def unload():
       </Edge>
       <Edge>
         <From>10</From>
+        <To>4</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>10</From>
         <To>8</To>
         <Label>Source2</Label>
       </Edge>
       <Edge>
-        <From>10</From>
-        <To>4</To>
-        <Label>Source1</Label>
+        <From>11</From>
+        <To>19</To>
+        <Label>Source3</Label>
       </Edge>
       <Edge>
         <From>11</From>
@@ -849,9 +1147,19 @@ def unload():
         <Label>Source3</Label>
       </Edge>
       <Edge>
+        <From>12</From>
+        <To>19</To>
+        <Label>Source4</Label>
+      </Edge>
+      <Edge>
         <From>13</From>
         <To>9</To>
         <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>13</From>
+        <To>19</To>
+        <Label>Source2</Label>
       </Edge>
       <Edge>
         <From>14</From>
@@ -879,13 +1187,13 @@ def unload():
         <Label>Source1</Label>
       </Edge>
       <Edge>
-        <From>17</From>
-        <To>19</To>
+        <From>18</From>
+        <To>17</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
-        <From>18</From>
-        <To>17</To>
+        <From>19</From>
+        <To>25</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
@@ -898,11 +1206,31 @@ def unload():
         <To>20</To>
         <Label>Source1</Label>
       </Edge>
+      <Edge>
+        <From>22</From>
+        <To>23</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>23</From>
+        <To>24</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>24</From>
+        <To>19</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>25</From>
+        <To>26</To>
+        <Label>Source1</Label>
+      </Edge>
     </Edges>
   </Workflow>
   <ExtensionTypes>
     <Type>Bonsai.Vision.ImageWriter, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Shaders.DrawArrays, Bonsai.Shaders, Version=0.16.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.DrawArrays, Bonsai.Shaders, Version=0.16.1.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.IO.TextWriter, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Scripting.PythonSource, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.IntProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
@@ -923,7 +1251,16 @@ def unload():
     <Type>Bonsai.Vision.Grayscale, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Vision.BackgroundSubtraction, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.PointGrey.FlyCapture, Bonsai.PointGrey, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Shaders.UpdateFrame, Bonsai.Shaders, Version=0.16.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.UpdateFrame, Bonsai.Shaders, Version=0.16.1.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.StringProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.EqualBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.DrawMesh, Bonsai.Shaders, Version=0.16.1.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.UpdateUniform, Bonsai.Shaders, Version=0.16.1.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.UpdateVertexBuffer, Bonsai.Shaders, Version=0.16.1.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.FloatProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Scripting.ExpressionTransform, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.AccumulateBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.MultiplyBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
   </ExtensionTypes>
 </WorkflowBuilder>
