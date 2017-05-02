@@ -240,10 +240,10 @@ def process(inputs):
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q1:Crop">
                       <q1:RegionOfInterest>
-                        <q1:X>1372</q1:X>
-                        <q1:Y>1372</q1:Y>
-                        <q1:Width>634</q1:Width>
-                        <q1:Height>634</q1:Height>
+                        <q1:X>1379</q1:X>
+                        <q1:Y>1379</q1:Y>
+                        <q1:Width>632</q1:Width>
+                        <q1:Height>632</q1:Height>
                       </q1:RegionOfInterest>
                     </Combinator>
                   </Expression>
@@ -467,31 +467,53 @@ def process(inputs):
           </Edges>
         </Workflow>
       </Expression>
-      <Expression xsi:type="Combinator">
-        <Combinator xsi:type="ToList" />
-      </Expression>
-      <Expression xsi:type="q4:PythonTransform">
-        <q4:Name>split_hMat</q4:Name>
-        <q4:Script>from System import Array
+      <Expression xsi:type="NestedWorkflow">
+        <Name>calibration file</Name>
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="q4:PythonTransform">
+              <q4:Name>split_hMat</q4:Name>
+              <q4:Script>from System import Array
 @returns(Array)
 def process(value):
   return Array[float]([float(el) for el in value.split()])</q4:Script>
+            </Expression>
+            <Expression xsi:type="q3:CsvReader">
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-04-28T09_23_28.csv</q3:FileName>
+              <q3:ScanPattern>%s</q3:ScanPattern>
+              <q3:SkipRows>0</q3:SkipRows>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
+              <MemberName>FileName</MemberName>
+              <Name>FileName</Name>
+              <Value>E:\00_bonsai_ffmpeg_out\calibrationOut2017-04-28T09_23_28.csv</Value>
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>0</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>1</From>
+              <To>0</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>2</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
       </Expression>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="q2:UpdateFrame" />
       </Expression>
       <Expression xsi:type="MemberSelector">
         <Selector>Source.Item1</Selector>
-      </Expression>
-      <Expression xsi:type="q3:CsvReader">
-        <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-04-27T09_46_10.csv</q3:FileName>
-        <q3:ScanPattern>%i %i %i %i %i %i</q3:ScanPattern>
-        <q3:SkipRows>0</q3:SkipRows>
-      </Expression>
-      <Expression xsi:type="q3:CsvReader">
-        <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-04-27T09_55_01.csv</q3:FileName>
-        <q3:ScanPattern>%s</q3:ScanPattern>
-        <q3:SkipRows>0</q3:SkipRows>
       </Expression>
       <Expression xsi:type="q4:PythonTransform">
         <q4:Script>import clr
@@ -503,26 +525,23 @@ from OpenCV.Net import *
 import math
 import traceback
 import random
+import sys
 
 generator = Random()
 
-
-
 speed=1 #px/frame
 
-stimDirOff=-math.pi/(180./45) #direction relative to animal heading where dot first appears. Used together with startDist to determine location of dot start.
-stimDirOffB=-math.pi/(180./135)
 stimDir=math.pi/(180./90) #direction of dot movement away from dot start. Direction is relative to animal heading. pi/2 = perpendicular
 
-startDist=75. # (px) how far away from centroid dot first appears.
+startDist=60. # (px) how far away from centroid dot first appears.
 endDist = 0. # (px) how far dot approaches
 
 groupSize=1 # number of times to repeat same dot size from sizeList
-groupGap=30*10 # (frames) delay before switching to a new size from sizeList
-dotGap=30*10 # (frames) delay between dots of the same size
+groupGap=30*20 # (frames) delay before switching to a new size from sizeList
+dotGap=30*20 # (frames) delay between dots of the same size
 
-preGap=30*2
-postGap=30*2
+preGap=30*20
+postGap=int(30*19.5)
 
 DotColor = 1.
 DotColorB = 0.2
@@ -532,7 +551,7 @@ DotColorB = 0.2
 groupCount=0 #counter for presentations of same dot size
 startSize=0 #initial dot size set to 0
 endSize=15
-iSize=[0,1.5,2]
+iSize=[0,1.26/1.6,1.86/1.6]
 pointPathAll=[] #stores dot paths
 ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)]) # stores (x,y,size) array for openGL sprite drawing
 gapFrames=dotGap # number of frames before next dot. Automatically set to groupGap or dotGap during experiment.
@@ -541,6 +560,8 @@ left=0
 front=0
 stimList=[]
 sAll=[]
+oldCoor=[]
+allCoor=[]
 # random number generator between min and max
 def randomFunc(generator,minval,maxval):
   return int(round(generator.NextDouble() * (maxval - minval) + minval))
@@ -561,10 +582,52 @@ def transf(x,y,h):
 
   return x,y
 
+def correctFish(x,y,xOff,yOff,xMax,yMax,xMaxCm,camHeightCm):
 
-@returns(Tuple[Array[Vector4],str,float])
+  scale=xMax/xMaxCm
+  xR=x+xOff
+  yR=y+yOff
+
+  xR=xR-(scale*(xR-xMax/2.)/(camHeightCm*scale))
+  yR=yR-(scale*(yR-yMax/2.)/(camHeightCm*scale))
+
+  return xR-xOff,yR-yOff
+
+def animalStr(c,h,pp):
+
+  wellstr=[]
+
+
+  for a in range(len(c)): #loop over animals
+    if len(pp)==0:
+      xp,yp,xp2,yp2=0,0,0,0
+    else:
+      p=pp[a][0] #get current frame
+      xp=p.X #point
+      yp=p.Y #point
+      p2=pp[a][1]
+      xp2=p2.X
+      yp2=p2.Y
+    heading=h[a]
+    x=c[a][0] #animal
+    y=c[a][1]#animal
+
+    #concatenate animal and dot data into string (data are in arena reference coordinates).
+
+    #if no animal was found, x=NaN --&gt; output NaN for this animal
+    if math.isnan(x):
+      wellstr.append("NaN NaN NaN NaN NaN NaN NaN")
+
+    else:
+      welldata=(x,y,heading,xp,yp,xp2,yp2) 
+      wellstr.append("%i %i %0.3f %i %i %i %i" % welldata)
+
+  return wellstr
+
+
+@returns(Tuple[Array[Vector4],str,float,int])
 def process(value):
-  global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,gapFrames,DotColor,stimDirOffB,left,front,stimList,sAll
+  global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,gapFrames,DotColor,stimDirOffB,left,front,stimList,sAll,oldCoor,allCoor
 
   episode=99
   xMax=value.Item4.Width #2048.0 #relevant for openGL scaling
@@ -577,13 +640,32 @@ def process(value):
 
   cAll=[] #[(x,y)]: list of centroids (one for each tracked animal)
   headingAll=[] # list of animal headings
-
+  oldCoor=allCoor
+  allCoor=[]
+  heading=[]
   #collect animal centroids and headings
   for a in range(value.Item1.Count): #loop over animals
     c=value.Item1[a].Centroid
-    heading=value.Item1[a].Orientation
+    c=[c.X,c.Y]
+    if math.isnan(c[0]):
+      if len(oldCoor)&gt;0:
+        if len(oldCoor[a])&gt;0:
+          c[0]=oldCoor[a][0]
+          c[1]=oldCoor[a][1]
+          heading=oldCoor[a][2]
+          #print 'fixed'
+
+    else:
+
+      xoff=value.Item2[a].Item1
+      yoff=value.Item2[a].Item2
+
+      #def correctFish(x,y,xOff,yOff,xMax,xMaxCm,camHeightCm):
+      c[0],c[1]=correctFish(c[0],c[1],xoff,yoff,xMax,yMax,32,75)
+      heading=value.Item1[a].Orientation
     cAll.append(c)
     headingAll.append(heading)
+    allCoor.append([c[0],c[1],heading])
 
   try: #big loop to process for each frame
 
@@ -594,9 +676,11 @@ def process(value):
 
       pointPathAll=[]
 
+      if groupCount&gt;=len(stimList):
+          groupCount=0
+
       if groupCount==0: #start of a new group: randomly select new dot size from list
-        #sizeInd=randomFunc(generator,0,len(sizeList))
-        #DotColor=randomFunc(generator,0,10)/10.
+
         size=10#sizeList[sizeInd]
         if len(stimList)==0:
           stimList=value.Item5
@@ -610,15 +694,17 @@ def process(value):
         
         left=stimList[groupCount].Item3
         sAll=[stimList[groupCount].Item1,stimList[groupCount].Item2]
-        groupCount+=1
+        
       else:
         gapFrames=groupGap # use groupGap delay before next dot
-        groupCount=0 # reset groupCount
       
       #decide left/right and front/back
 
-      #left=random(generator,0,100)&lt;50
-      #front=random(generator,0,100)&lt;50
+      offDegA=stimList[groupCount].Item4
+      offDegB=stimList[groupCount].Item5
+      groupCount+=1
+      stimDirOff=-math.pi/(180./offDegA) #direction relative to animal heading where dot first appears. Used together with startDist to determine location of dot start.
+      stimDirOffB=-math.pi/(180./offDegB)
 
       # invert direction of stimulus movement and stimulus start location to alternate left and right side
       if left:
@@ -631,16 +717,13 @@ def process(value):
         sdo=stimDirOff
         sdoB=stimDirOffB
 
-      
-      
-
       for a in range(value.Item1.Count): #loop over animals
       
         #for each arena, test if animal was found and then generate dot path
 
         c=cAll[a]
         pointPath=[]
-        if math.isnan(headingAll[a]): #generate empty path if no animal found
+        if math.isnan(c[0]): #generate empty path if no animal found
           for i in range(2):
             pointPath.append(Point(0,0))
 
@@ -651,97 +734,73 @@ def process(value):
           distance=startDist # distance to dot start point
           rise = math.sin(heading)*distance
           run = math.cos(heading)*distance
-          x=c.X+run
-          y=c.Y+rise
+          x=c[0]+run
+          y=c[1]+rise
           pointPath.append(Point(x,y))
           heading=headingAll[a]+sdoB
           rise = math.sin(heading)*distance
           run = math.cos(heading)*distance
-          x=c.X+run
-          y=c.Y+rise
+          x=c[0]+run
+          y=c[1]+rise
           pointPath.append(Point(x,y))
 
 
         pointPathAll.append(pointPath)
 
 
-
-
     # in each frame, decide if dot should draw
 
-
+    wellstr= animalStr(cAll,headingAll,pointPathAll)
 
     if frCount &lt; DotPathLength+gapFrames+preGap+postGap: # outer loop for each dot presentation
       
       frCount+=1
+      episode=3 #gap
 
       if frCount-(preGap+postGap)&lt;DotPathLength: # still have dot path to show
-
+        sizeNow=[0,0]
+        
         if frCount&lt;preGap:
-          sizeNow=[0,0]
           episode=0
-        elif frCount&gt;DotPathLength+preGap:
+        elif DotPathLength+preGap &lt; frCount &lt;DotPathLength+preGap+postGap:
           pointPathAll=[]
-          for a in range(value.Item1.Count):
-            pointPath=[]
-            for i in range(2):
-              pointPath.append(Point(0,0))
-            pointPathAll.append(pointPath)
-
-          sizeNow=[0,0]
           episode=2
+
         else:
           sizeNow=sAll
           episode=1
         drawAll=[] #list of all dot coordinates
-        wellstr=[] #string output of animal and dot data for file output
+        #wellstr=[] #string output of animal and dot data for file output
+
+        #def animalStr(c,h,pp):
+        
 
         for a in range(value.Item1.Count): #loop over animals
 
-          pointPath=pointPathAll[a] #get entire current dot path (this allows to draw multiple dots from same path)
-          p=pointPath[0] #get current frame
-          xp=p.X #point
-          yp=p.Y #point
-          p2=pointPath[1]
-          xp2=p2.X
-          yp2=p2.Y
-          c=cAll[a] #get current centroid
-          heading=headingAll[a]
-          x=c.X #animal
-          y=c.Y #animal
+          
 
-          #concatenate animal and dot data into string (data are in arena reference coordinates).
-
-          #if no animal was found, x=NaN --&gt; output NaN for this animal
-          if math.isnan(x):
-            wellstr.append("NaN NaN NaN NaN NaN NaN NaN")
-          else:
-            welldata=(x,y,heading,xp,yp,xp2,yp2) 
-            wellstr.append("%i %i %0.3f %i %i %i %i" % welldata)
-            
-            
           #add arena offset to point coordinates for display
           xoff=value.Item2[a].Item1
           yoff=value.Item2[a].Item2
-          xx=xp+xoff
-          yy=yp+yoff
 
-          if math.isnan(xx):
+          if len(pointPathAll)==0:
             xx,yy=0,0
             drawAll.append([xx,yy,0,0])
             drawAll.append([xx,yy,0,0])
+            currSize=[0,0]
           else:
+            pointPath=pointPathAll[a] #get entire current dot path (this allows to draw multiple dots from same path)
             currSize=[]
             for i in range(2): #can show multiple dots
 
               p=pointPath[i]
-              #r=random(generator,1,5)
+
               xp=p.X#+r
               yp=p.Y#+r
               xx=xp+xoff
               yy=yp+yoff
               xx,yy=transf(xx,yy,h) ##projector-camera calibration
-              #drawAll.append([xx,yy,float((1+i*3)/7.),int(frCount/(i+1))])
+
               currSize.append(int(iSize[sizeNow[i]]*(frCount-preGap))*speed)
               drawAll.append([xx,yy,1,currSize[i]])
 
@@ -753,20 +812,33 @@ def process(value):
 
       else: #no drawing array between dot presentations
         ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)])
-        st='gap'
+        #st='gap'
+        welldata=(0,0,left,episode) 
+        wellstr.append("%i %i %i %i" % welldata)
+        st=" ".join(wellstr)
     else:
       frCount=0
       ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)])
-      st='gap'
-
+      #st='gap'
+      welldata=(0,0,left,episode) 
+      wellstr.append("%i %i %i %i" % welldata)
+      st=" ".join(wellstr)
 
   except:
+
+    #exc_type, exc_value, exc_traceback = sys.exc_info()
+    #print "*** print_tb:"
+    #traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+    #print "*** print_exception:"
+    #traceback.print_exception(exc_type, exc_value, exc_traceback,
+                              #limit=5, file=sys.stdout)
 
     print traceback.format_exc()
     ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)])
     st='none'
 
-  return Tuple.Create(ar,st,DotColor)
+
+  return Tuple.Create(ar,st,DotColor,episode)
 
 def unload():
   global frCount,pointPathAll, size,ar,groupCount,stimDir,stimDirOff,gapFrames,stimList,sAll
@@ -788,17 +860,47 @@ def unload():
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="CombineLatest" />
       </Expression>
-      <Expression xsi:type="Combinator">
-        <Combinator xsi:type="ToList" />
+      <Expression xsi:type="NestedWorkflow">
+        <Name>ROI list</Name>
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="ToList" />
+            </Expression>
+            <Expression xsi:type="q3:CsvReader">
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-04-28T09_16_16.csv</q3:FileName>
+              <q3:ScanPattern>%i %i %i %i %i %i</q3:ScanPattern>
+              <q3:SkipRows>0</q3:SkipRows>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
+              <MemberName>FileName</MemberName>
+              <Name>FileName</Name>
+              <Value>E:\00_bonsai_ffmpeg_out\ROIdef2017-04-28T09_16_16.csv</Value>
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>0</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>1</From>
+              <To>0</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>2</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
       </Expression>
-      <Expression xsi:type="q3:CsvReader">
-        <q3:FileName>E:\00_bonsai_ffmpeg_out\stimLists\16xCompetition.txt</q3:FileName>
-        <q3:ScanPattern>%i %i %i</q3:ScanPattern>
-        <q3:SkipRows>0</q3:SkipRows>
-      </Expression>
       <Expression xsi:type="Combinator">
-        <Combinator xsi:type="StringProperty">
-          <Value>gap</Value>
+        <Combinator xsi:type="IntProperty">
+          <Value>3</Value>
         </Combinator>
       </Expression>
       <Expression xsi:type="Combinator">
@@ -1084,6 +1186,47 @@ def process(value):
           </Edges>
         </Workflow>
       </Expression>
+      <Expression xsi:type="MemberSelector">
+        <Selector>Source.Item4</Selector>
+      </Expression>
+      <Expression xsi:type="NestedWorkflow">
+        <Name>stimuls list</Name>
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="ToList" />
+            </Expression>
+            <Expression xsi:type="q3:CsvReader">
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\stimLists\16xCompetition_degDef.txt</q3:FileName>
+              <q3:ScanPattern>%i %i %i %i %i</q3:ScanPattern>
+              <q3:SkipRows>0</q3:SkipRows>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
+              <MemberName>FileName</MemberName>
+              <Name>FileName</Name>
+              <Value>E:\00_bonsai_ffmpeg_out\stimLists\16xCompetition_degDef.txt</Value>
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>0</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>1</From>
+              <To>0</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>2</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
+      </Expression>
     </Nodes>
     <Edges>
       <Edge>
@@ -1107,11 +1250,6 @@ def process(value):
         <Label>Source1</Label>
       </Edge>
       <Edge>
-        <From>7</From>
-        <To>23</To>
-        <Label>Source2</Label>
-      </Edge>
-      <Edge>
         <From>8</From>
         <To>5</To>
         <Label>Source1</Label>
@@ -1133,98 +1271,93 @@ def process(value):
       </Edge>
       <Edge>
         <From>11</From>
-        <To>19</To>
+        <To>8</To>
         <Label>Source3</Label>
       </Edge>
       <Edge>
         <From>11</From>
-        <To>8</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>12</From>
-        <To>8</To>
-        <Label>Source3</Label>
-      </Edge>
-      <Edge>
-        <From>12</From>
-        <To>19</To>
+        <To>16</To>
         <Label>Source4</Label>
       </Edge>
       <Edge>
-        <From>13</From>
+        <From>12</From>
         <To>9</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
+        <From>12</From>
+        <To>16</To>
+        <Label>Source2</Label>
+      </Edge>
+      <Edge>
         <From>13</From>
-        <To>19</To>
+        <To>9</To>
         <Label>Source2</Label>
       </Edge>
       <Edge>
         <From>14</From>
-        <To>9</To>
-        <Label>Source2</Label>
-      </Edge>
-      <Edge>
-        <From>15</From>
-        <To>11</To>
+        <To>13</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
-        <From>16</From>
-        <To>12</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>17</From>
-        <To>14</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>17</From>
+        <From>14</From>
         <To>7</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
-        <From>18</From>
-        <To>17</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>19</From>
-        <To>25</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>20</From>
-        <To>8</To>
-        <Label>Source4</Label>
-      </Edge>
-      <Edge>
-        <From>21</From>
-        <To>20</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>22</From>
+        <From>14</From>
         <To>23</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
-        <From>23</From>
-        <To>24</To>
+        <From>15</From>
+        <To>14</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
-        <From>24</From>
+        <From>16</From>
+        <To>21</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>17</From>
+        <To>16</To>
+        <Label>Source3</Label>
+      </Edge>
+      <Edge>
+        <From>17</From>
+        <To>8</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>18</From>
         <To>19</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
-        <From>25</From>
-        <To>26</To>
+        <From>19</From>
+        <To>20</To>
         <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>20</From>
+        <To>16</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>21</From>
+        <To>22</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>23</From>
+        <To>19</To>
+        <Label>Source2</Label>
+      </Edge>
+      <Edge>
+        <From>24</From>
+        <To>8</To>
+        <Label>Source4</Label>
       </Edge>
     </Edges>
   </Workflow>
@@ -1251,9 +1384,9 @@ def process(value):
     <Type>Bonsai.Vision.Grayscale, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Vision.BackgroundSubtraction, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.PointGrey.FlyCapture, Bonsai.PointGrey, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Shaders.UpdateFrame, Bonsai.Shaders, Version=0.16.1.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.StringProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.UpdateFrame, Bonsai.Shaders, Version=0.16.1.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.EqualBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Shaders.DrawMesh, Bonsai.Shaders, Version=0.16.1.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Shaders.UpdateUniform, Bonsai.Shaders, Version=0.16.1.0, Culture=neutral, PublicKeyToken=null</Type>
