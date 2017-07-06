@@ -550,11 +550,12 @@ startDist=60. # (px) how far away from centroid dot first appears.
 endDist = 0. # (px) how far dot approaches
 
 groupSize=1 # number of times to repeat same dot size from sizeList
-groupGap=30*20 # (frames) delay before switching to a new size from sizeList
-dotGap=30*20 # (frames) delay between dots of the same size
 
-preGap=30*20
-postGap=int(30*19.5)
+# stimulus  timing is now specified in ISI file
+#groupGap=30*20 # (frames) delay before switching to a new size from sizeList
+#dotGap=30*20 # (frames) delay between dots of the same size
+#preGap=30*20
+#postGap=int(30*19.5)
 
 DotColor = 1.
 DotColorB = 0.2
@@ -568,7 +569,6 @@ endSize=15
 iSize=[0,1.26/1.6,1.86/1.6]
 pointPathAll=[] #stores dot paths
 ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)]) # stores (x,y,size) array for openGL sprite drawing
-gapFrames=dotGap # number of frames before next dot. Automatically set to groupGap or dotGap during experiment.
 frCount=200#int(endSize+preGap+1) #counter for frames since dot presentation
 left=0
 front=0
@@ -638,10 +638,29 @@ def animalStr(c,h,pp):
 
   return wellstr
 
+def accumu(lis):
+  total = 0
+  for x in lis:
+    total += x
+    yield total
+        
+def getCurrentISI(isiList,currentCount):
+  isiRepeats=[x.Item2 for x in isiList]
+  nISI=len(isiRepeats)
+  RepAccumulated=list(accumu(isiRepeats))
+  currentISIn=sum([1 if x&gt;currentCount else 0 for x in RepAccumulated])
+  if sum(currentTest)==0:
+    currentISIn=nISI
+    
+  preGap=int(isiList[currentISIn].Item3*30)
+  postGap=int(isiList[currentISIn].Item4*30)
+  hyp=int(isiList[currentISIn].Item5*30)
+  return preGap,postGap,hyp
+  
 
 @returns(Tuple[Array[Vector4],str,float,int])
 def process(value):
-  global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,gapFrames,DotColor,stimDirOffB,left,front,stimList,sAll,oldCoor,allCoor,stimCount
+  global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,DotColor,stimDirOffB,left,front,stimList,sAll,oldCoor,allCoor,stimCount
 
   episode=99
   xMax=value.Item4.Width #2048.0 #relevant for openGL scaling
@@ -657,6 +676,13 @@ def process(value):
   oldCoor=allCoor
   allCoor=[]
   heading=[]
+  
+  isiList=value.Item6
+  
+  
+  preGap,postGap,gapFrames=getCurrentISI(isiList)
+  
+  
   #collect animal centroids and headings
   for a in range(value.Item1.Count): #loop over animals
     c=value.Item1[a].Centroid
@@ -683,6 +709,10 @@ def process(value):
 
   try: #big loop to process for each frame
 
+	#decide what to do based on current frame number and episode triggers
+	#case 1: frCount==preGap-1 --&gt; one frame prior to dot presentation
+	#	--&gt; generate point path
+  
     if frCount==preGap-1: #begin presentation of a new dot
 
       #pre-calculate dot paths for all animals
@@ -690,27 +720,40 @@ def process(value):
 
       pointPathAll=[]
 
+	  # pick a new dot size from randomized list
+	  # loop through list using 'groupCount' as index.
+	  # reset once index is larger than list and re randomize list
+	  
+	  #reset when larger than list
       if groupCount&gt;=len(stimList):
           groupCount=0
 
+		# after reset, generate a new randomized list
       if groupCount==0: #start of a new group: randomly select new dot size from list
 
         size=10#sizeList[sizeInd]
+		
+		#initially (when length ==0) load stimList from txt input
+		#after that, re shuffle list
         if len(stimList)==0:
           stimList=value.Item5
           random.shuffle(stimList,random.random)
-          gapFrames=100
+          #gapFrames=100
         else:
           random.shuffle(stimList,random.random)
 
+	
+		# Specify gap duration and stimulus side and size 
+		# gap duration can be different between dots belonging to same group vs. different group.
+		#within same group:
       if groupCount&lt;len(stimList):
-        gapFrames=dotGap # use dotGap delay before next dot
+        #gapFrames=dotGap # use dotGap delay before next dot
         
         left=stimList[groupCount].Item3
         sAll=[stimList[groupCount].Item1,stimList[groupCount].Item2]
-        
-      else:
-        gapFrames=groupGap # use groupGap delay before next dot
+        #before next group:
+      #else:
+        #gapFrames=groupGap # use groupGap delay before next dot
       
       #decide left/right and front/back
 
@@ -731,8 +774,8 @@ def process(value):
         sdo=stimDirOff
         sdoB=stimDirOffB
 
-      for a in range(value.Item1.Count): #loop over animals
-      
+		#generate point paths for each animal (if found)
+      for a in range(value.Item1.Count):
         #for each arena, test if animal was found and then generate dot path
 
         c=cAll[a]
@@ -758,15 +801,15 @@ def process(value):
           y=c[1]+rise
           pointPath.append(Point(x,y))
 
-
         pointPathAll.append(pointPath)
 
-
-    # in each frame, decide if dot should draw
+        # in each frame, decide if dot should draw
 
     wellstr= animalStr(cAll,headingAll,pointPathAll)
 
-    if frCount &lt; DotPathLength+gapFrames+preGap+postGap: # outer loop for each dot presentation
+    TrialLengh=DotPathLength+gapFrames+preGap+postGap #this is the sum of all episoded
+	
+    if frCount &lt; TrialLengh: # outer loop for each dot presentation
       
       frCount+=1
       episode=3 #gap
@@ -830,7 +873,10 @@ def process(value):
         welldata=(0,0,left,episode) 
         wellstr.append("%i %i %i %i" % welldata)
         st=" ".join(wellstr)
+    
+    #End of Trial: reset frame count, show nothing
     else:
+    
       frCount=0
       ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)])
       #st='gap'
@@ -855,7 +901,7 @@ def process(value):
   return Tuple.Create(ar,st,DotColor,episode)
 
 def unload():
-  global frCount,pointPathAll, size,ar,groupCount,stimDir,stimDirOff,gapFrames,stimList,sAll
+  global frCount,pointPathAll, size,ar,groupCount,stimDir,stimDirOff,stimList,sAll,stimCount
   frCount=None
   pointPathAll=None
   ar=None
@@ -863,7 +909,6 @@ def unload():
   groupCount=None
   stimDir=None
   stimDirOff=None
-  gapFrames=None
   stimList=None
   sAll=None
   stimCount=None
