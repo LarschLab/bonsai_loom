@@ -240,10 +240,10 @@ def process(inputs):
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q1:Crop">
                       <q1:RegionOfInterest>
-                        <q1:X>1379</q1:X>
-                        <q1:Y>1379</q1:Y>
-                        <q1:Width>632</q1:Width>
-                        <q1:Height>632</q1:Height>
+                        <q1:X>1390</q1:X>
+                        <q1:Y>1366</q1:Y>
+                        <q1:Width>622</q1:Width>
+                        <q1:Height>622</q1:Height>
                       </q1:RegionOfInterest>
                     </Combinator>
                   </Expression>
@@ -311,6 +311,9 @@ def process(inputs):
             <Expression xsi:type="MemberSelector">
               <Selector>Source.Item4</Selector>
             </Expression>
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Item5</Selector>
+            </Expression>
           </Nodes>
           <Edges>
             <Edge>
@@ -364,6 +367,11 @@ def process(inputs):
               <Label>Source1</Label>
             </Edge>
             <Edge>
+              <From>4</From>
+              <To>11</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
               <From>6</From>
               <To>3</To>
               <Label>Source3</Label>
@@ -387,6 +395,11 @@ def process(inputs):
               <From>10</From>
               <To>3</To>
               <Label>Source5</Label>
+            </Edge>
+            <Edge>
+              <From>11</From>
+              <To>3</To>
+              <Label>Source6</Label>
             </Edge>
           </Edges>
         </Workflow>
@@ -479,14 +492,14 @@ def process(value):
   return Array[float]([float(el) for el in value.split()])</q4:Script>
             </Expression>
             <Expression xsi:type="q3:CsvReader">
-              <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-04-28T09_23_28.csv</q3:FileName>
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-06-29T09_33_33.csv</q3:FileName>
               <q3:ScanPattern>%s</q3:ScanPattern>
               <q3:SkipRows>0</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\calibrationOut2017-04-28T09_23_28.csv</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\calibrationOut2017-06-29T09_33_33.csv</Value>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
           </Nodes>
@@ -548,6 +561,7 @@ DotColorB = 0.2
 
 #define variables
 
+stimCount=0 #global counter for total stimulus presentation
 groupCount=0 #counter for presentations of same dot size
 startSize=0 #initial dot size set to 0
 endSize=15
@@ -627,7 +641,7 @@ def animalStr(c,h,pp):
 
 @returns(Tuple[Array[Vector4],str,float,int])
 def process(value):
-  global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,gapFrames,DotColor,stimDirOffB,left,front,stimList,sAll,oldCoor,allCoor
+  global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,gapFrames,DotColor,stimDirOffB,left,front,stimList,sAll,oldCoor,allCoor,stimCount
 
   episode=99
   xMax=value.Item4.Width #2048.0 #relevant for openGL scaling
@@ -852,6 +866,7 @@ def unload():
   gapFrames=None
   stimList=None
   sAll=None
+  stimCount=None
 </q4:Script>
       </Expression>
       <Expression xsi:type="SubscribeSubject">
@@ -868,14 +883,14 @@ def unload():
               <Combinator xsi:type="ToList" />
             </Expression>
             <Expression xsi:type="q3:CsvReader">
-              <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-04-28T09_16_16.csv</q3:FileName>
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-06-29T09_31_24.csv</q3:FileName>
               <q3:ScanPattern>%i %i %i %i %i %i</q3:ScanPattern>
               <q3:SkipRows>0</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\ROIdef2017-04-28T09_16_16.csv</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\ROIdef2017-06-29T09_31_24.csv</Value>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
           </Nodes>
@@ -1227,6 +1242,44 @@ def process(value):
           </Edges>
         </Workflow>
       </Expression>
+      <Expression xsi:type="NestedWorkflow">
+        <Name>ISI list</Name>
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="ToList" />
+            </Expression>
+            <Expression xsi:type="q3:CsvReader">
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\stimLists\16xCompetition_degDef.txt</q3:FileName>
+              <q3:ScanPattern>%f %f %f %f %f</q3:ScanPattern>
+              <q3:SkipRows>1</q3:SkipRows>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
+              <MemberName>FileName</MemberName>
+              <Name>FileName</Name>
+              <Value>E:\00_bonsai_ffmpeg_out\stimLists\16xCompetition_degDef.txt</Value>
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>0</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>1</From>
+              <To>0</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>2</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
+      </Expression>
     </Nodes>
     <Edges>
       <Edge>
@@ -1358,6 +1411,11 @@ def process(value):
         <From>24</From>
         <To>8</To>
         <Label>Source4</Label>
+      </Edge>
+      <Edge>
+        <From>25</From>
+        <To>8</To>
+        <Label>Source5</Label>
       </Edge>
     </Edges>
   </Workflow>
