@@ -240,10 +240,10 @@ def process(inputs):
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q1:Crop">
                       <q1:RegionOfInterest>
-                        <q1:X>1387</q1:X>
-                        <q1:Y>1381</q1:Y>
-                        <q1:Width>640</q1:Width>
-                        <q1:Height>640</q1:Height>
+                        <q1:X>1372</q1:X>
+                        <q1:Y>1372</q1:Y>
+                        <q1:Width>634</q1:Width>
+                        <q1:Height>634</q1:Height>
                       </q1:RegionOfInterest>
                     </Combinator>
                   </Expression>
@@ -492,14 +492,14 @@ def process(value):
   return Array[float]([float(el) for el in value.split()])</q4:Script>
             </Expression>
             <Expression xsi:type="q3:CsvReader">
-              <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-07-20T10_17_35.csv</q3:FileName>
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-08-01T08_58_37.csv</q3:FileName>
               <q3:ScanPattern>%s</q3:ScanPattern>
               <q3:SkipRows>0</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\calibrationOut2017-07-20T10_17_35.csv</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\calibrationOut2017-08-01T08_58_37.csv</Value>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
           </Nodes>
@@ -557,9 +557,9 @@ groupSize=1 # number of times to repeat same dot size from sizeList
 #preGap=30*20
 #postGap=int(30*19.5)
 
-#DotColor = 1.
-DotColor = 0.2
-DotColorB = 0.2
+DotColor = 1.
+#DotColor = 0.2
+#DotColorB = 0.2
 
 #define variables
 
@@ -936,14 +936,14 @@ def unload():
               <Combinator xsi:type="ToList" />
             </Expression>
             <Expression xsi:type="q3:CsvReader">
-              <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-07-20T10_16_33.csv</q3:FileName>
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-08-01T08_57_49.csv</q3:FileName>
               <q3:ScanPattern>%i %i %i %i %i %i</q3:ScanPattern>
               <q3:SkipRows>0</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\ROIdef2017-07-20T10_16_33.csv</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\ROIdef2017-08-01T08_57_49.csv</Value>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
           </Nodes>
@@ -1265,14 +1265,14 @@ def process(value):
               <Combinator xsi:type="ToList" />
             </Expression>
             <Expression xsi:type="q3:CsvReader">
-              <q3:FileName>E:\00_bonsai_ffmpeg_out\stimLists\2xSingleDisc_degDef.txt</q3:FileName>
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\stimLists\2xSingleDisc_degDef_small.txt</q3:FileName>
               <q3:ScanPattern>%i %i %i %i %i</q3:ScanPattern>
               <q3:SkipRows>0</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\stimLists\2xSingleDisc_degDef.txt</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\stimLists\2xSingleDisc_degDef_small.txt</Value>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
           </Nodes>
@@ -1380,13 +1380,13 @@ def process(value):
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="FloatProperty">
-                <Value>900</Value>
+                <Value>600</Value>
               </Combinator>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfSingleFloatProperty">
               <MemberName>Value</MemberName>
               <Name>Value</Name>
-              <Value>900</Value>
+              <Value>600</Value>
             </Expression>
             <Expression xsi:type="GreaterThan" />
             <Expression xsi:type="WorkflowOutput" />
