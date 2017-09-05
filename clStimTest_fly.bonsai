@@ -560,9 +560,6 @@ groupSize=1 # number of times to repeat same dot size from sizeList
 #preGap=30*20
 #postGap=int(30*19.5)
 
-DotColor = 1.
-#DotColor = 0.2
-#DotColorB = 0.2
 
 #define variables
 
@@ -570,14 +567,14 @@ stimCount=0 #global counter for total stimulus presentation
 groupCount=0 #counter for presentations of same dot size
 startSize=0 #initial dot size set to 0
 endSize=15
-#iSize=[0,1.26/1.6,1.86/1.6] #Miguel's settings
-#iSize=[0,0.5,1.86/1.6] #Carlos' size settings
+#iSize=[0,1.26/1.6,1.86/1.6];iContrast=[1.0,1.0,1.0] #Miguel's settings
+#iSize=[0,0.5,1.86/1.6];iContrast=[1.0,1.0,1.0] #Carlos' size settings
 #iSize=[0,1.86/1.6,1.86/1.6];iContrast=[0.0,0.2,1.0] #Miguel's settings for large dots variable contrast
 iSize=[0,0.3,0.45,0.675,1.0,1.5,2.3];iContrast=[1.0,1.0,1.0,1.0,1.0,1.0] #Eliane's settings
 
 
 pointPathAll=[] #stores dot paths
-ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)]) # stores (x,y,size) array for openGL sprite drawing
+ar=Array[Vector4]([Vector4(0.,0.,0,0)]) # stores (x,y,size) array for openGL sprite drawing
 frCount=200#int(endSize+preGap+1) #counter for frames since dot presentation
 left=0
 front=0
@@ -662,7 +659,6 @@ def getCurrentISI(isiList,currentCount):
   currentISIn=sum([0 if x&gt;currentCount else 1 for x in RepAccumulated])
   if currentISIn==nISI:
     currentISIn=nISI-1
-  #print '*** current ISI: ',isiList[currentISIn].Item1*30,' seconds'
   preGap=int(isiList[currentISIn].Item3*30)
   postGap=int(isiList[currentISIn].Item4*30)
   hyp=int(isiList[currentISIn].Item5*30)
@@ -671,7 +667,7 @@ def getCurrentISI(isiList,currentCount):
 
 @returns(Tuple[Array[Vector4],str,float,int])
 def process(value):
-  global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,DotColor,stimDirOffB,left,front,stimList,sAll,oldCoor,allCoor,stimCount,isiDuration
+  global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,stimDirOffB,left,front,stimList,sAll,oldCoor,allCoor,stimCount,isiDuration
 
   episode=99
   xMax=value.Item4.Width #2048.0 #relevant for openGL scaling
@@ -751,22 +747,15 @@ def process(value):
         if len(stimList)==0:
           stimList=value.Item5
           random.shuffle(stimList,random.random)
-          #gapFrames=100
         else:
           random.shuffle(stimList,random.random)
 
 	
-		# Specify gap duration and stimulus side and size 
-		# gap duration can be different between dots belonging to same group vs. different group.
-		#within same group:
       if groupCount&lt;len(stimList):
-        #gapFrames=dotGap # use dotGap delay before next dot
         
         left=stimList[groupCount].Item3
         sAll=[stimList[groupCount].Item1,stimList[groupCount].Item2]
-        #before next group:
-      #else:
-        #gapFrames=groupGap # use groupGap delay before next dot
+
       
       #decide left/right and front/back
 
@@ -840,10 +829,7 @@ def process(value):
           sizeNow=sAll
           episode=1
         drawAll=[] #list of all dot coordinates
-        #wellstr=[] #string output of animal and dot data for file output
 
-        #def animalStr(c,h,pp):
-        
 
         for a in range(value.Item1.Count): #loop over animals
 
@@ -889,7 +875,7 @@ def process(value):
         st=" ".join(wellstr)
 
       else: #no drawing array between dot presentations
-        ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)])
+        ar=Array[Vector4]([Vector4(0.,0.,0,0)])
         #st='gap'
         welldata=(0,0,left,episode) 
         wellstr.append("%i %i %i %i" % welldata)
@@ -900,7 +886,7 @@ def process(value):
       isiList=value.Item6
       isiDuration=list(getCurrentISI(isiList,stimCount))
       frCount=0
-      ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)])
+      ar=Array[Vector4]([Vector4(0.,0.,0,0)])
       #st='gap'
       welldata=(0,0,left,episode) 
       wellstr.append("%i %i %i %i" % welldata)
@@ -908,19 +894,12 @@ def process(value):
 
   except:
 
-    #exc_type, exc_value, exc_traceback = sys.exc_info()
-    #print "*** print_tb:"
-    #traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
-    #print "*** print_exception:"
-    #traceback.print_exception(exc_type, exc_value, exc_traceback,
-                              #limit=5, file=sys.stdout)
-
     print traceback.format_exc()
-    ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)])
+    ar=Array[Vector4]([Vector4(0.,0.,0,0)])
     st='none'
 
 
-  return Tuple.Create(ar,st,DotColor,episode)
+  return Tuple.Create(ar,st,0,episode)
 
 def unload():
   global frCount,pointPathAll, size,ar,groupCount,stimDir,stimDirOff,stimList,sAll,stimCount,isiDuration
