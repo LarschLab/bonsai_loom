@@ -240,8 +240,8 @@ def process(inputs):
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q1:Crop">
                       <q1:RegionOfInterest>
-                        <q1:X>1372</q1:X>
-                        <q1:Y>1372</q1:Y>
+                        <q1:X>1384</q1:X>
+                        <q1:Y>1396</q1:Y>
                         <q1:Width>634</q1:Width>
                         <q1:Height>634</q1:Height>
                       </q1:RegionOfInterest>
@@ -492,14 +492,14 @@ def process(value):
   return Array[float]([float(el) for el in value.split()])</q4:Script>
             </Expression>
             <Expression xsi:type="q3:CsvReader">
-              <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-08-01T08_58_37.csv</q3:FileName>
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-08-14T10_26_29.csv</q3:FileName>
               <q3:ScanPattern>%s</q3:ScanPattern>
               <q3:SkipRows>0</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\calibrationOut2017-08-01T08_58_37.csv</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\calibrationOut2017-08-14T10_26_29.csv</Value>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
           </Nodes>
@@ -542,6 +542,9 @@ import sys
 
 generator = Random()
 
+VC=False #set True to store dot contrast instead of size in text output
+
+
 speed=1 #px/frame
 
 stimDir=math.pi/(180./90) #direction of dot movement away from dot start. Direction is relative to animal heading. pi/2 = perpendicular
@@ -568,7 +571,10 @@ groupCount=0 #counter for presentations of same dot size
 startSize=0 #initial dot size set to 0
 endSize=15
 #iSize=[0,1.26/1.6,1.86/1.6] #Miguel's settings
-iSize=[0,0.5,1.86/1.6] #Carlos' size settings
+#iSize=[0,0.5,1.86/1.6] #Carlos' size settings
+#iSize=[0,1.86/1.6,1.86/1.6];iContrast=[0.0,0.2,1.0] #Miguel's settings for large dots variable contrast
+iSize=[0,0.3,0.45,0.675,1.0,1.5,2.3];iContrast=[1.0,1.0,1.0,1.0,1.0,1.0] #Eliane's settings
+
 
 pointPathAll=[] #stores dot paths
 ar=Array[Vector4]([Vector4(0.,0.,0,DotColor)]) # stores (x,y,size) array for openGL sprite drawing
@@ -852,9 +858,11 @@ def process(value):
             drawAll.append([xx,yy,0,0])
             drawAll.append([xx,yy,0,0])
             currSize=[0,0]
+            currContrast=[0,0]
           else:
             pointPath=pointPathAll[a] #get entire current dot path (this allows to draw multiple dots from same path)
             currSize=[]
+            currContrast=[]
             for i in range(2): #can show multiple dots
 
               p=pointPath[i]
@@ -866,10 +874,16 @@ def process(value):
               xx,yy=transf(xx,yy,h) ##projector-camera calibration
 
               currSize.append(int(iSize[sizeNow[i]]*(frCount-preGap))*speed)
-              drawAll.append([xx,yy,DotColor,currSize[i]])
+              currContrast.append(iContrast[sizeNow[i]])
+              drawAll.append([xx,yy,currContrast[i],currSize[i]])
+        if VC:
+          welldata=(currContrast[0],currContrast[1],left,episode) 
+          wellstr.append("%.1f %.1f %i %i" % welldata)
 
-        welldata=(currSize[0],currSize[1],left,episode) 
-        wellstr.append("%i %i %i %i" % welldata)
+        else:
+          welldata=(currSize[0],currSize[1],left,episode)
+          wellstr.append("%i %i %i %i" % welldata)
+
         #build dot array and output string from all animals
         ar=Array[Vector4]([Vector4(2*(xy[0]-xMax/2)/xMax,-2*(xy[1]-yMax/2)/yMax,xy[3],xy[2]) for xy in drawAll])
         st=" ".join(wellstr)
@@ -936,14 +950,14 @@ def unload():
               <Combinator xsi:type="ToList" />
             </Expression>
             <Expression xsi:type="q3:CsvReader">
-              <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-08-01T08_57_49.csv</q3:FileName>
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-08-14T10_14_35.csv</q3:FileName>
               <q3:ScanPattern>%i %i %i %i %i %i</q3:ScanPattern>
               <q3:SkipRows>0</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\ROIdef2017-08-01T08_57_49.csv</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\ROIdef2017-08-14T10_14_35.csv</Value>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
           </Nodes>
@@ -1265,14 +1279,14 @@ def process(value):
               <Combinator xsi:type="ToList" />
             </Expression>
             <Expression xsi:type="q3:CsvReader">
-              <q3:FileName>E:\00_bonsai_ffmpeg_out\stimLists\2xSingleDisc_degDef_small.txt</q3:FileName>
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\stimLists\12xSizeTuning_Front.txt</q3:FileName>
               <q3:ScanPattern>%i %i %i %i %i</q3:ScanPattern>
               <q3:SkipRows>0</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\stimLists\2xSingleDisc_degDef_small.txt</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\stimLists\12xSizeTuning_Front.txt</Value>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
           </Nodes>
@@ -1303,14 +1317,14 @@ def process(value):
               <Combinator xsi:type="ToList" />
             </Expression>
             <Expression xsi:type="q3:CsvReader">
-              <q3:FileName>E:\00_bonsai_ffmpeg_out\stimLists\90_10.csv</q3:FileName>
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\isiList\60_60.txt</q3:FileName>
               <q3:ScanPattern>%f %f %f %f %f</q3:ScanPattern>
               <q3:SkipRows>1</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\stimLists\90_10.csv</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\isiList\60_60.txt</Value>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
           </Nodes>
@@ -1380,13 +1394,13 @@ def process(value):
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="FloatProperty">
-                <Value>600</Value>
+                <Value>1</Value>
               </Combinator>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfSingleFloatProperty">
               <MemberName>Value</MemberName>
               <Name>Value</Name>
-              <Value>600</Value>
+              <Value>1</Value>
             </Expression>
             <Expression xsi:type="GreaterThan" />
             <Expression xsi:type="WorkflowOutput" />
