@@ -240,8 +240,8 @@ def process(inputs):
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q1:Crop">
                       <q1:RegionOfInterest>
-                        <q1:X>1384</q1:X>
-                        <q1:Y>1396</q1:Y>
+                        <q1:X>1390</q1:X>
+                        <q1:Y>1390</q1:Y>
                         <q1:Width>634</q1:Width>
                         <q1:Height>634</q1:Height>
                       </q1:RegionOfInterest>
@@ -492,14 +492,14 @@ def process(value):
   return Array[float]([float(el) for el in value.split()])</q4:Script>
             </Expression>
             <Expression xsi:type="q3:CsvReader">
-              <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-08-14T10_26_29.csv</q3:FileName>
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-10-12T09_54_07.csv</q3:FileName>
               <q3:ScanPattern>%s</q3:ScanPattern>
               <q3:SkipRows>0</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\calibrationOut2017-08-14T10_26_29.csv</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\calibrationOut2017-10-12T09_54_07.csv</Value>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
           </Nodes>
@@ -568,9 +568,9 @@ groupCount=0 #counter for presentations of same dot size
 startSize=0 #initial dot size set to 0
 endSize=15
 #iSize=[0,1.26/1.6,1.86/1.6];iContrast=[1.0,1.0,1.0] #Miguel's settings
-#iSize=[0,0.5,1.86/1.6];iContrast=[1.0,1.0,1.0] #Carlos' size settings
+iSize=[0,0.5,1.86/1.6];iContrast=[1.0,1.0,1.0] #Carlos' size settings
 #iSize=[0,1.86/1.6,1.86/1.6];iContrast=[0.0,0.2,1.0] #Miguel's settings for large dots variable contrast
-iSize=[0,0.3,0.45,0.675,1.0,1.5,2.3];iContrast=[1.0,1.0,1.0,1.0,1.0,1.0] #Eliane's settings
+#iSize=[0,0.3,0.45,0.675,1.0,1.5,2.3];iContrast=[1.0,1.0,1.0,1.0,1.0,1.0] #Eliane's settings
 
 
 pointPathAll=[] #stores dot paths
@@ -875,7 +875,7 @@ def process(value):
         st=" ".join(wellstr)
 
       else: #no drawing array between dot presentations
-        ar=Array[Vector4]([Vector4(0.,0.,0,0)])
+        ar=Array[Vector4]([Vector4(0.,0.,0.,0)])
         #st='gap'
         welldata=(0,0,left,episode) 
         wellstr.append("%i %i %i %i" % welldata)
@@ -886,7 +886,7 @@ def process(value):
       isiList=value.Item6
       isiDuration=list(getCurrentISI(isiList,stimCount))
       frCount=0
-      ar=Array[Vector4]([Vector4(0.,0.,0,0)])
+      ar=Array[Vector4]([Vector4(0.,0.,0.,0)])
       #st='gap'
       welldata=(0,0,left,episode) 
       wellstr.append("%i %i %i %i" % welldata)
@@ -895,11 +895,11 @@ def process(value):
   except:
 
     print traceback.format_exc()
-    ar=Array[Vector4]([Vector4(0.,0.,0,0)])
+    ar=Array[Vector4]([Vector4(0.,0.,0.,0)])
     st='none'
 
 
-  return Tuple.Create(ar,st,0,episode)
+  return Tuple.Create(ar,st,0.,episode)
 
 def unload():
   global frCount,pointPathAll, size,ar,groupCount,stimDir,stimDirOff,stimList,sAll,stimCount,isiDuration
@@ -929,14 +929,14 @@ def unload():
               <Combinator xsi:type="ToList" />
             </Expression>
             <Expression xsi:type="q3:CsvReader">
-              <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-08-14T10_14_35.csv</q3:FileName>
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-10-12T09_18_29.csv</q3:FileName>
               <q3:ScanPattern>%i %i %i %i %i %i</q3:ScanPattern>
               <q3:SkipRows>0</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\ROIdef2017-08-14T10_14_35.csv</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\ROIdef2017-10-12T09_18_29.csv</Value>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
           </Nodes>
@@ -1258,14 +1258,14 @@ def process(value):
               <Combinator xsi:type="ToList" />
             </Expression>
             <Expression xsi:type="q3:CsvReader">
-              <q3:FileName>E:\00_bonsai_ffmpeg_out\stimLists\12xSizeTuning_Front.txt</q3:FileName>
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\stimLists\2xSingleDisc_degDef_small.txt</q3:FileName>
               <q3:ScanPattern>%i %i %i %i %i</q3:ScanPattern>
               <q3:SkipRows>0</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\stimLists\12xSizeTuning_Front.txt</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\stimLists\2xSingleDisc_degDef_small.txt</Value>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
           </Nodes>
@@ -1296,14 +1296,14 @@ def process(value):
               <Combinator xsi:type="ToList" />
             </Expression>
             <Expression xsi:type="q3:CsvReader">
-              <q3:FileName>E:\00_bonsai_ffmpeg_out\isiList\60_60.txt</q3:FileName>
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\isiList\90_10.csv</q3:FileName>
               <q3:ScanPattern>%f %f %f %f %f</q3:ScanPattern>
               <q3:SkipRows>1</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\isiList\60_60.txt</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\isiList\90_10.csv</Value>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
           </Nodes>
@@ -1373,13 +1373,13 @@ def process(value):
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="FloatProperty">
-                <Value>1</Value>
+                <Value>600</Value>
               </Combinator>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfSingleFloatProperty">
               <MemberName>Value</MemberName>
               <Name>Value</Name>
-              <Value>1</Value>
+              <Value>600</Value>
             </Expression>
             <Expression xsi:type="GreaterThan" />
             <Expression xsi:type="WorkflowOutput" />
@@ -1574,7 +1574,7 @@ def process(value):
   </Workflow>
   <ExtensionTypes>
     <Type>Bonsai.Vision.ImageWriter, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Shaders.DrawArrays, Bonsai.Shaders, Version=0.16.1.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.DrawArrays, Bonsai.Shaders, Version=0.18.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.IO.TextWriter, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Scripting.PythonSource, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.IntProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
@@ -1597,11 +1597,11 @@ def process(value):
     <Type>Bonsai.PointGrey.FlyCapture, Bonsai.PointGrey, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Shaders.UpdateFrame, Bonsai.Shaders, Version=0.16.1.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.UpdateFrame, Bonsai.Shaders, Version=0.18.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.EqualBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Shaders.DrawMesh, Bonsai.Shaders, Version=0.16.1.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Shaders.UpdateUniform, Bonsai.Shaders, Version=0.16.1.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Shaders.UpdateVertexBuffer, Bonsai.Shaders, Version=0.16.1.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.DrawMesh, Bonsai.Shaders, Version=0.18.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.UpdateUniform, Bonsai.Shaders, Version=0.18.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.UpdateVertexBuffer, Bonsai.Shaders, Version=0.18.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.FloatProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Scripting.ExpressionTransform, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Reactive.AccumulateBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
