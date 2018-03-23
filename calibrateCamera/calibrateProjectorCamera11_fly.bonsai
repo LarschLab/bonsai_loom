@@ -1,10 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <WorkflowBuilder Version="2.3.0">
-  <Workflow xmlns:q2="clr-namespace:Bonsai.Shaders;assembly=Bonsai.Shaders" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:q3="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:q5="clr-namespace:Bonsai.Windows.Input;assembly=Bonsai.Windows.Input" xmlns:q4="clr-namespace:Bonsai.IO;assembly=Bonsai.System" xmlns:q6="clr-namespace:Bonsai.PointGrey;assembly=Bonsai.PointGrey" xmlns:q1="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns="https://horizongir.org/bonsai">
+  <Workflow xmlns:q2="clr-namespace:Bonsai.Shaders;assembly=Bonsai.Shaders" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:q3="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:q5="clr-namespace:Bonsai.Windows.Input;assembly=Bonsai.Windows.Input" xmlns:q4="clr-namespace:Bonsai.IO;assembly=Bonsai.System" xmlns:q6="clr-namespace:Bonsai.uEye;assembly=Bonsai.uEye" xmlns:q1="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns="https://horizongir.org/bonsai">
     <Nodes>
-      <Expression xsi:type="MemberSelector">
-        <Selector>Source.Image</Selector>
-      </Expression>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="FloatProperty">
           <Value>0</Value>
@@ -353,13 +350,6 @@ def process(value):
 
   return s</q3:Script>
       </Expression>
-      <Expression xsi:type="Combinator">
-        <Combinator xsi:type="q6:FlyCapture">
-          <q6:Index>0</q6:Index>
-          <q6:ColorFormat>Bgr</q6:ColorFormat>
-          <q6:ColorProcessing>Default</q6:ColorProcessing>
-        </Combinator>
-      </Expression>
       <Expression xsi:type="MemberSelector">
         <Selector>Source.Size</Selector>
       </Expression>
@@ -374,7 +364,7 @@ def process(value):
         <Workflow>
           <Nodes>
             <Expression xsi:type="q4:CsvReader">
-              <q4:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-11-21T09_41_31.csv</q4:FileName>
+              <q4:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2018-03-23T15_55_19.csv</q4:FileName>
               <q4:ScanPattern>%i %i %i %i %i %i</q4:ScanPattern>
               <q4:SkipRows>0</q4:SkipRows>
             </Expression>
@@ -382,7 +372,7 @@ def process(value):
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\ROIdef2018-02-05T10_19_07.csv</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\ROIdef2018-03-23T15_55_19.csv</Value>
             </Expression>
           </Nodes>
           <Edges>
@@ -399,56 +389,60 @@ def process(value):
           </Edges>
         </Workflow>
       </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q6:uEyeCapture">
+          <q6:DeviceId xsi:nil="true" />
+          <q6:ConfigFile>2048x2048_10fps_4.9.ini</q6:ConfigFile>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="MemberSelector">
+        <Selector>Source.Image</Selector>
+      </Expression>
     </Nodes>
     <Edges>
       <Edge>
         <From>0</From>
+        <To>6</To>
+        <Label>Source2</Label>
+      </Edge>
+      <Edge>
+        <From>1</From>
         <To>2</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
-        <From>0</From>
-        <To>30</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>1</From>
-        <To>7</To>
-        <Label>Source2</Label>
-      </Edge>
-      <Edge>
         <From>2</From>
-        <To>3</To>
+        <To>12</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>3</From>
-        <To>13</To>
+        <To>11</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
-        <From>4</From>
-        <To>12</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>4</From>
-        <To>16</To>
+        <From>3</From>
+        <To>15</To>
         <Label>Source2</Label>
       </Edge>
       <Edge>
-        <From>5</From>
-        <To>12</To>
+        <From>4</From>
+        <To>11</To>
         <Label>Source3</Label>
       </Edge>
       <Edge>
+        <From>5</From>
+        <To>17</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
         <From>6</From>
-        <To>18</To>
+        <To>4</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>7</From>
-        <To>5</To>
+        <To>6</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
@@ -458,67 +452,67 @@ def process(value):
       </Edge>
       <Edge>
         <From>9</From>
-        <To>8</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>10</From>
-        <To>12</To>
+        <To>11</To>
         <Label>Source2</Label>
       </Edge>
       <Edge>
+        <From>11</From>
+        <To>5</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
         <From>12</From>
-        <To>6</To>
+        <To>13</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>13</From>
-        <To>14</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>14</From>
-        <To>28</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>15</From>
-        <To>19</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>16</From>
-        <To>17</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>17</From>
-        <To>23</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>17</From>
         <To>27</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
+        <From>14</From>
+        <To>18</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>15</From>
+        <To>16</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>16</From>
+        <To>22</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>16</From>
+        <To>26</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>17</From>
+        <To>10</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
         <From>18</From>
-        <To>11</To>
+        <To>19</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>19</From>
-        <To>20</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>20</From>
-        <To>23</To>
+        <To>22</To>
         <Label>Source2</Label>
       </Edge>
       <Edge>
+        <From>21</From>
+        <To>14</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
         <From>22</From>
-        <To>15</To>
+        <To>23</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
@@ -533,42 +527,47 @@ def process(value):
       </Edge>
       <Edge>
         <From>25</From>
-        <To>26</To>
+        <To>20</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>26</From>
-        <To>21</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>27</From>
-        <To>12</To>
+        <To>11</To>
         <Label>Source4</Label>
       </Edge>
       <Edge>
-        <From>28</From>
-        <To>16</To>
+        <From>27</From>
+        <To>15</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
-        <From>29</From>
-        <To>0</To>
+        <From>28</From>
+        <To>29</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>30</From>
-        <To>31</To>
+        <To>11</To>
+        <Label>Source5</Label>
+      </Edge>
+      <Edge>
+        <From>31</From>
+        <To>3</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>32</From>
-        <To>12</To>
-        <Label>Source5</Label>
+        <To>33</To>
+        <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>33</From>
-        <To>4</To>
+        <To>1</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>33</From>
+        <To>28</To>
         <Label>Source1</Label>
       </Edge>
     </Edges>
@@ -594,8 +593,8 @@ def process(value):
     <Type>Bonsai.IO.TextWriter, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Windows.Input.KeyDown, Bonsai.Windows.Input, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Reactive.Take, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.PointGrey.FlyCapture, Bonsai.PointGrey, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.uEye.uEyeCapture, Bonsai.uEye, Version=2.1.0.0, Culture=neutral, PublicKeyToken=null</Type>
   </ExtensionTypes>
 </WorkflowBuilder>

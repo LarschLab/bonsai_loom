@@ -141,10 +141,10 @@
     <WindowState>Normal</WindowState>
   </DialogSettings>
   <DialogSettings>
-    <Visible>false</Visible>
+    <Visible>true</Visible>
     <Location>
-      <X>25</X>
-      <Y>25</Y>
+      <X>563</X>
+      <Y>98</Y>
     </Location>
     <Size>
       <Width>988</Width>
