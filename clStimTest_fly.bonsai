@@ -240,10 +240,10 @@ def process(inputs):
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q1:Crop">
                       <q1:RegionOfInterest>
-                        <q1:X>1390</q1:X>
-                        <q1:Y>1390</q1:Y>
-                        <q1:Width>634</q1:Width>
-                        <q1:Height>634</q1:Height>
+                        <q1:X>1361</q1:X>
+                        <q1:Y>1343</q1:Y>
+                        <q1:Width>620</q1:Width>
+                        <q1:Height>620</q1:Height>
                       </q1:RegionOfInterest>
                     </Combinator>
                   </Expression>
@@ -422,7 +422,7 @@ def process(inputs):
           <Nodes>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="q1:Threshold">
-                <q1:ThresholdValue>12</q1:ThresholdValue>
+                <q1:ThresholdValue>18</q1:ThresholdValue>
                 <q1:MaxValue>255</q1:MaxValue>
                 <q1:ThresholdType>Binary</q1:ThresholdType>
               </Combinator>
@@ -492,14 +492,14 @@ def process(value):
   return Array[float]([float(el) for el in value.split()])</q4:Script>
             </Expression>
             <Expression xsi:type="q3:CsvReader">
-              <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2017-10-12T09_54_07.csv</q3:FileName>
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2018-02-05T15_53_18.csv</q3:FileName>
               <q3:ScanPattern>%s</q3:ScanPattern>
               <q3:SkipRows>0</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\calibrationOut2017-10-12T09_54_07.csv</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\calibrationOut2018-02-05T15_53_18.csv</Value>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
           </Nodes>
@@ -568,7 +568,7 @@ groupCount=0 #counter for presentations of same dot size
 startSize=0 #initial dot size set to 0
 endSize=15
 #iSize=[0,1.26/1.6,1.86/1.6];iContrast=[1.0,1.0,1.0] #Miguel's settings
-iSize=[0,0.5,1.86/1.6];iContrast=[1.0,1.0,1.0] #Carlos' size settings
+#iSize=[0,0.5,1.86/1.6];iContrast=[1.0,1.0,1.0] #Carlos' size settings
 #iSize=[0,1.86/1.6,1.86/1.6];iContrast=[0.0,0.2,1.0] #Miguel's settings for large dots variable contrast
 #iSize=[0,0.3,0.45,0.675,1.0,1.5,2.3];iContrast=[1.0,1.0,1.0,1.0,1.0,1.0] #Eliane's settings
 
@@ -580,6 +580,7 @@ left=0
 front=0
 stimList=[]
 sAll=[]
+contrastAll=[]
 oldCoor=[]
 allCoor=[]
 isiDuration=[]
@@ -667,7 +668,7 @@ def getCurrentISI(isiList,currentCount):
 
 @returns(Tuple[Array[Vector4],str,float,int])
 def process(value):
-  global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,stimDirOffB,left,front,stimList,sAll,oldCoor,allCoor,stimCount,isiDuration
+  global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,stimDirOffB,left,front,stimList,sAll,contrastAll,oldCoor,allCoor,stimCount,isiDuration
 
   episode=99
   xMax=value.Item4.Width #2048.0 #relevant for openGL scaling
@@ -755,7 +756,7 @@ def process(value):
         
         left=stimList[groupCount].Item3
         sAll=[stimList[groupCount].Item1,stimList[groupCount].Item2]
-
+        contrastAll=[stimList[groupCount].Item6,stimList[groupCount].Item7]
       
       #decide left/right and front/back
 
@@ -818,7 +819,7 @@ def process(value):
 
       if frCount-(preGap+postGap)&lt;DotPathLength: # still have dot path to show
         sizeNow=[0,0]
-        
+        ContrastNow=[0,0]
         if frCount&lt;preGap:
           episode=0
         elif DotPathLength+preGap &lt; frCount &lt;DotPathLength+preGap+postGap:
@@ -827,6 +828,7 @@ def process(value):
 
         else:
           sizeNow=sAll
+          ContrastNow=contrastAll
           episode=1
         drawAll=[] #list of all dot coordinates
 
@@ -859,8 +861,8 @@ def process(value):
               yy=yp+yoff
               xx,yy=transf(xx,yy,h) ##projector-camera calibration
 
-              currSize.append(int(iSize[sizeNow[i]]*(frCount-preGap))*speed)
-              currContrast.append(iContrast[sizeNow[i]])
+              currSize.append(int(sizeNow[i]*(frCount-preGap))*speed)
+              currContrast.append(ContrastNow[i])
               drawAll.append([xx,yy,currContrast[i],currSize[i]])
         if VC:
           welldata=(currContrast[0],currContrast[1],left,episode) 
@@ -912,6 +914,7 @@ def unload():
   stimDirOff=None
   stimList=None
   sAll=None
+  contrastAll=None
   stimCount=None
   isiDuration=None</q4:Script>
       </Expression>
@@ -929,14 +932,14 @@ def unload():
               <Combinator xsi:type="ToList" />
             </Expression>
             <Expression xsi:type="q3:CsvReader">
-              <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2017-10-12T09_18_29.csv</q3:FileName>
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2018-02-05T10_19_07.csv</q3:FileName>
               <q3:ScanPattern>%i %i %i %i %i %i</q3:ScanPattern>
               <q3:SkipRows>0</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\ROIdef2017-10-12T09_18_29.csv</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\ROIdef2018-02-05T10_19_07.csv</Value>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
           </Nodes>
@@ -1258,14 +1261,14 @@ def process(value):
               <Combinator xsi:type="ToList" />
             </Expression>
             <Expression xsi:type="q3:CsvReader">
-              <q3:FileName>E:\00_bonsai_ffmpeg_out\stimLists\2xSingleDisc_degDef_small.txt</q3:FileName>
-              <q3:ScanPattern>%i %i %i %i %i</q3:ScanPattern>
+              <q3:FileName>E:\00_bonsai_ffmpeg_out\stimLists\2xSingleDisc_fullDef.csv</q3:FileName>
+              <q3:ScanPattern>%f %f %i %i %i %f %f</q3:ScanPattern>
               <q3:SkipRows>0</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
               <Name>FileName</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\stimLists\2xSingleDisc_degDef_small.txt</Value>
+              <Value>E:\00_bonsai_ffmpeg_out\stimLists\2xSingleDisc_fullDef.csv</Value>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
           </Nodes>
