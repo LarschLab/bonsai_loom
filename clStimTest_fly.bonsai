@@ -865,12 +865,12 @@ def process(value):
               currContrast.append(ContrastNow[i])
               drawAll.append([xx,yy,currContrast[i],currSize[i]])
         if VC:
-          welldata=(currContrast[0],currContrast[1],left,episode) 
-          wellstr.append("%.1f %.1f %i %i" % welldata)
+          welldata=(currSize[0],currSize[1],left,episode,currContrast[0],currContrast[1])
+          wellstr.append("%.2f %.2f %i %i %.2f %.2f" % welldata)
 
         else:
-          welldata=(currSize[0],currSize[1],left,episode)
-          wellstr.append("%i %i %i %i" % welldata)
+          welldata=(currSize[0],currSize[1],left,episode,currContrast[0],currContrast[1])
+          wellstr.append("%.2f %.2f %i %i %.2f %.2f" % welldata)
 
         #build dot array and output string from all animals
         ar=Array[Vector4]([Vector4(2*(xy[0]-xMax/2)/xMax,-2*(xy[1]-yMax/2)/yMax,xy[3],xy[2]) for xy in drawAll])
@@ -879,8 +879,8 @@ def process(value):
       else: #no drawing array between dot presentations
         ar=Array[Vector4]([Vector4(0.,0.,0.,0)])
         #st='gap'
-        welldata=(0,0,left,episode) 
-        wellstr.append("%i %i %i %i" % welldata)
+        welldata=(0,0,left,episode,0,0) 
+        wellstr.append("%.2f %.2f %i %i %.2f %.2f" % welldata)
         st=" ".join(wellstr)
     
     #End of Trial: reset frame count, show nothing, get new ISI durations
@@ -890,8 +890,8 @@ def process(value):
       frCount=0
       ar=Array[Vector4]([Vector4(0.,0.,0.,0)])
       #st='gap'
-      welldata=(0,0,left,episode) 
-      wellstr.append("%i %i %i %i" % welldata)
+      welldata=(0,0,left,episode,0,0) 
+      wellstr.append("%.2f %.2f %i %i %.2f %.2f" % welldata)
       st=" ".join(wellstr)
 
   except:
