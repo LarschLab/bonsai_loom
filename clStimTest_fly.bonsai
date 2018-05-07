@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <WorkflowBuilder Version="2.3.0">
-  <Workflow xmlns:q2="clr-namespace:Bonsai.uEye;assembly=Bonsai.uEye" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:q3="clr-namespace:Bonsai.Shaders;assembly=Bonsai.Shaders" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:q5="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns:q4="clr-namespace:Bonsai.IO;assembly=Bonsai.System" xmlns:q6="clr-namespace:Bonsai.joh.Vision;assembly=BonsaiPackage5" xmlns:q1="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns="https://horizongir.org/bonsai">
+  <Workflow xmlns:q1="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:q2="clr-namespace:Bonsai.uEye;assembly=Bonsai.uEye" xmlns:q3="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns="https://horizongir.org/bonsai">
     <Nodes>
       <Expression xsi:type="NestedWorkflow">
         <Name>IDSVideo</Name>
@@ -70,1275 +70,41 @@
         <Description />
         <Workflow>
           <Nodes>
-            <Expression xsi:type="PublishSubject">
-              <Name>trackOut</Name>
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="q3:DrawArrays">
-                <q3:ShaderName>Particles</q3:ShaderName>
-                <q3:DrawMode>Points</q3:DrawMode>
-                <q3:Usage>DynamicDraw</q3:Usage>
-                <q3:VertexAttributes>
-                  <q3:VertexAttributeMapping>
-                    <q3:Size>4</q3:Size>
-                    <q3:Normalized>false</q3:Normalized>
-                    <q3:Type>Float</q3:Type>
-                  </q3:VertexAttributeMapping>
-                </q3:VertexAttributes>
-              </Combinator>
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="q4:TextWriter">
-                <q4:FileName>E:\00_bonsai_ffmpeg_out\PositionTxt_allROI.txt</q4:FileName>
-                <q4:Suffix>Timestamp</q4:Suffix>
-                <q4:Buffered>true</q4:Buffered>
-                <q4:Overwrite>false</q4:Overwrite>
-                <q4:Append>false</q4:Append>
-              </Combinator>
-            </Expression>
-            <Expression xsi:type="NestedWorkflow">
-              <Workflow>
-                <Nodes>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="q3:DrawMesh">
-                      <q3:ShaderName>Waveform</q3:ShaderName>
-                      <q3:MeshName>Waveform</q3:MeshName>
-                    </Combinator>
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="q3:UpdateUniform">
-                      <q3:UniformName>frequency</q3:UniformName>
-                      <q3:ShaderName>Waveform</q3:ShaderName>
-                    </Combinator>
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="q3:UpdateVertexBuffer">
-                      <q3:MeshName>Waveform</q3:MeshName>
-                      <q3:DrawMode>Points</q3:DrawMode>
-                      <q3:Usage>DynamicDraw</q3:Usage>
-                      <q3:VertexAttributes>
-                        <q3:VertexAttributeMapping>
-                          <q3:Size>2</q3:Size>
-                          <q3:Normalized>false</q3:Normalized>
-                          <q3:Type>Double</q3:Type>
-                        </q3:VertexAttributeMapping>
-                      </q3:VertexAttributes>
-                    </Combinator>
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="q3:UpdateUniform">
-                      <q3:UniformName>phase</q3:UniformName>
-                      <q3:ShaderName>Waveform</q3:ShaderName>
-                    </Combinator>
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="FloatProperty">
-                      <Value>20</Value>
-                    </Combinator>
-                  </Expression>
-                  <Expression xsi:type="MemberSelector">
-                    <Selector>Source.Item1</Selector>
-                  </Expression>
-                  <Expression xsi:type="q5:ExpressionTransform">
-                    <q5:Expression>single(it)</q5:Expression>
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="CombineLatest" />
-                  </Expression>
-                  <Expression xsi:type="Accumulate" />
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="Take">
-                      <Count>5</Count>
-                    </Combinator>
-                  </Expression>
-                  <Expression xsi:type="q5:PythonTransform">
-                    <q5:Script>import clr
-clr.AddReference("OpenTK")
-from OpenTK import Vector2, Vector3
-from System import Array, Single, Random,Tuple
-clr.AddReference("OpenCV.Net")
-from OpenCV.Net import *
-
-xMax=2048.0 #relevant for openGL scaling
-yMax=xMax
-
-def transf(x,y,hArr):
-
-  h = Mat.FromArray(hArr, 3, 3, Depth.F64, 1)
-
-  values1 = Array[float]([x,y])
-  values2 = Array[float]([1,1])
-
-  point = Mat.FromArray(values1, 1, 1, Depth.F64,2)
-  out = Mat.FromArray(values2, 1, 1, Depth.F64,2)
-
-  CV.PerspectiveTransform(point,out,h)
-
-  x=out.Item[0].Val0
-  y=out.Item[0].Val1
-
-  return x,y
-
-@returns(Mat)
-def process(value):
-  hArr =value.Item2
-
-
-  x = [r.Item4 for r in value.Item1]
-  y = [r.Item5 for r in value.Item1]
-  scale=xMax/31.
-  for i in range(len(x)):
-    
-    
-    
-    x[i]=x[i]-(scale*(x[i]-xMax/2.)/(75*scale))
-    y[i]=y[i]-(scale*(y[i]-yMax/2.)/(75*scale))
-    x[i],y[i]=transf(x[i],y[i],hArr)
-    x[i]=(2*(x[i]-xMax/2))/xMax
-    y[i]=(-2*(y[i]-yMax/2))/yMax
-
-  
-  xy=sum(zip(x, y), ()) 
-
-  xyA = Array[float](xy)
-
-
-  xym = Mat.FromArray(xyA, len(value.Item1), 2, Depth.F64, 1)
-
-  return xym</q5:Script>
-                  </Expression>
-                  <Expression xsi:type="MemberSelector">
-                    <Selector>Source.Item2.EventArgs.Time</Selector>
-                  </Expression>
-                  <Expression xsi:type="MemberSelector">
-                    <Selector>Source.Item3,Source.Item4</Selector>
-                  </Expression>
-                  <Expression xsi:type="Condition">
-                    <Workflow>
-                      <Nodes>
-                        <Expression xsi:type="WorkflowInput">
-                          <Name>Source1</Name>
-                        </Expression>
-                        <Expression xsi:type="WorkflowOutput" />
-                        <Expression xsi:type="MemberSelector">
-                          <Selector>Source.Item1</Selector>
-                        </Expression>
-                      </Nodes>
-                      <Edges>
-                        <Edge>
-                          <From>0</From>
-                          <To>2</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>2</From>
-                          <To>1</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                      </Edges>
-                    </Workflow>
-                  </Expression>
-                  <Expression xsi:type="WorkflowInput">
-                    <Name>Source1</Name>
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="FloatProperty">
-                      <Value>5</Value>
-                    </Combinator>
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="Zip" />
-                  </Expression>
-                  <Expression xsi:type="Multiply" />
-                </Nodes>
-                <Edges>
-                  <Edge>
-                    <From>0</From>
-                    <To>4</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>3</From>
-                    <To>0</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>4</From>
-                    <To>1</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>5</From>
-                    <To>2</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>6</From>
-                    <To>16</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>6</From>
-                    <To>15</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>7</From>
-                    <To>5</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>8</From>
-                    <To>6</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>9</From>
-                    <To>7</To>
-                    <Label>Source2</Label>
-                  </Edge>
-                  <Edge>
-                    <From>10</From>
-                    <To>7</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>11</From>
-                    <To>8</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>11</From>
-                    <To>9</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>12</From>
-                    <To>10</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>13</From>
-                    <To>11</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>13</From>
-                    <To>12</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>14</From>
-                    <To>13</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>15</From>
-                    <To>16</To>
-                    <Label>Source2</Label>
-                  </Edge>
-                  <Edge>
-                    <From>16</From>
-                    <To>17</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>17</From>
-                    <To>3</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                </Edges>
-              </Workflow>
-            </Expression>
-            <Expression xsi:type="SelectMany">
-              <Workflow>
-                <Nodes>
-                  <Expression xsi:type="MemberSelector">
-                    <Selector>Source.Item1</Selector>
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="Concat" />
-                  </Expression>
-                  <Expression xsi:type="MemberSelector">
-                    <Selector>Source.Item2</Selector>
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="Zip" />
-                  </Expression>
-                  <Expression xsi:type="WorkflowInput">
-                    <Name>Source1</Name>
-                  </Expression>
-                  <Expression xsi:type="WorkflowOutput" />
-                  <Expression xsi:type="MemberSelector">
-                    <Selector>Source.Item3</Selector>
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="CombineLatest" />
-                  </Expression>
-                  <Expression xsi:type="NestedWorkflow">
-                    <Name>findFish</Name>
-                    <Workflow>
-                      <Nodes>
-                        <Expression xsi:type="Combinator">
-                          <Combinator xsi:type="ToList" />
-                        </Expression>
-                        <Expression xsi:type="Combinator">
-                          <Combinator xsi:type="q1:LargestBinaryRegion" />
-                        </Expression>
-                        <Expression xsi:type="Combinator">
-                          <Combinator xsi:type="q1:BinaryRegionAnalysis" />
-                        </Expression>
-                        <Expression xsi:type="Combinator">
-                          <Combinator xsi:type="q1:FindContours">
-                            <q1:Mode>External</q1:Mode>
-                            <q1:Method>ChainApproxNone</q1:Method>
-                            <q1:Offset>
-                              <q1:X>0</q1:X>
-                              <q1:Y>0</q1:Y>
-                            </q1:Offset>
-                            <q1:MinArea>5</q1:MinArea>
-                            <q1:MaxArea>5000</q1:MaxArea>
-                          </Combinator>
-                        </Expression>
-                        <Expression xsi:type="Combinator">
-                          <Combinator xsi:type="q1:Crop">
-                            <q1:RegionOfInterest>
-                              <q1:X>1396</q1:X>
-                              <q1:Y>1390</q1:Y>
-                              <q1:Width>622</q1:Width>
-                              <q1:Height>622</q1:Height>
-                            </q1:RegionOfInterest>
-                          </Combinator>
-                        </Expression>
-                        <Expression xsi:type="InputMapping">
-                          <PropertyMappings>
-                            <Property name="RegionOfInterest" selector="Source.Item2.Item1,Source.Item2.Item2,Source.Item2.Item3,Source.Item2.Item3" />
-                          </PropertyMappings>
-                          <Selector>Source.Item1</Selector>
-                        </Expression>
-                        <Expression xsi:type="WorkflowInput">
-                          <Name>Source1</Name>
-                        </Expression>
-                        <Expression xsi:type="WorkflowOutput" />
-                        <Expression xsi:type="Combinator">
-                          <Combinator xsi:type="q6:HeadingFromOrientation" />
-                        </Expression>
-                      </Nodes>
-                      <Edges>
-                        <Edge>
-                          <From>0</From>
-                          <To>7</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>1</From>
-                          <To>8</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>2</From>
-                          <To>1</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>3</From>
-                          <To>2</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>4</From>
-                          <To>3</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>5</From>
-                          <To>4</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>6</From>
-                          <To>5</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>8</From>
-                          <To>0</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                      </Edges>
-                    </Workflow>
-                  </Expression>
-                  <Expression xsi:type="MemberSelector">
-                    <Selector>Source.Item2</Selector>
-                  </Expression>
-                  <Expression xsi:type="MemberSelector">
-                    <Selector>Source.Item4</Selector>
-                  </Expression>
-                  <Expression xsi:type="MemberSelector">
-                    <Selector>Source.Item5</Selector>
-                  </Expression>
-                </Nodes>
-                <Edges>
-                  <Edge>
-                    <From>0</From>
-                    <To>1</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>0</From>
-                    <To>3</To>
-                    <Label>Source2</Label>
-                  </Edge>
-                  <Edge>
-                    <From>1</From>
-                    <To>7</To>
-                    <Label>Source2</Label>
-                  </Edge>
-                  <Edge>
-                    <From>2</From>
-                    <To>7</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>3</From>
-                    <To>5</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>4</From>
-                    <To>2</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>4</From>
-                    <To>0</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>4</From>
-                    <To>6</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>4</From>
-                    <To>9</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>4</From>
-                    <To>10</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>4</From>
-                    <To>11</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>6</From>
-                    <To>3</To>
-                    <Label>Source3</Label>
-                  </Edge>
-                  <Edge>
-                    <From>7</From>
-                    <To>8</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>8</From>
-                    <To>3</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>9</From>
-                    <To>3</To>
-                    <Label>Source4</Label>
-                  </Edge>
-                  <Edge>
-                    <From>10</From>
-                    <To>3</To>
-                    <Label>Source5</Label>
-                  </Edge>
-                  <Edge>
-                    <From>11</From>
-                    <To>3</To>
-                    <Label>Source6</Label>
-                  </Edge>
-                </Edges>
-              </Workflow>
-            </Expression>
-            <Expression xsi:type="MemberSelector">
-              <Selector>Source.Item2</Selector>
-            </Expression>
-            <Expression xsi:type="MemberSelector">
-              <Selector>Source.Item2</Selector>
-            </Expression>
-            <Expression xsi:type="Condition">
-              <Workflow>
-                <Nodes>
-                  <Expression xsi:type="WorkflowInput">
-                    <Name>Source1</Name>
-                  </Expression>
-                  <Expression xsi:type="WorkflowOutput" />
-                  <Expression xsi:type="MemberSelector">
-                    <Selector>Source.Item1</Selector>
-                  </Expression>
-                </Nodes>
-                <Edges>
-                  <Edge>
-                    <From>0</From>
-                    <To>2</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>2</From>
-                    <To>1</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                </Edges>
-              </Workflow>
-            </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="CombineLatest" />
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="CombineLatest" />
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="CombineLatest" />
-            </Expression>
-            <Expression xsi:type="NestedWorkflow">
-              <Name>ROI list</Name>
-              <Workflow>
-                <Nodes>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="ToList" />
-                  </Expression>
-                  <Expression xsi:type="q4:CsvReader">
-                    <q4:FileName>E:\00_bonsai_ffmpeg_out\ROIdef2018-05-04T16_06_53.csv</q4:FileName>
-                    <q4:ScanPattern>%i %i %i %i %i %i</q4:ScanPattern>
-                    <q4:SkipRows>0</q4:SkipRows>
-                  </Expression>
-                  <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
-                    <MemberName>FileName</MemberName>
-                    <Name>FileName</Name>
-                    <Value>E:\00_bonsai_ffmpeg_out\ROIdef2018-05-04T16_06_53.csv</Value>
-                  </Expression>
-                  <Expression xsi:type="WorkflowOutput" />
-                </Nodes>
-                <Edges>
-                  <Edge>
-                    <From>0</From>
-                    <To>3</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>1</From>
-                    <To>0</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>2</From>
-                    <To>1</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                </Edges>
-              </Workflow>
-            </Expression>
-            <Expression xsi:type="MemberSelector">
-              <Selector>Source.Item2</Selector>
-            </Expression>
-            <Expression xsi:type="NestedWorkflow">
-              <Name>calibration file</Name>
-              <Workflow>
-                <Nodes>
-                  <Expression xsi:type="q5:PythonTransform">
-                    <q5:Name>split_hMat</q5:Name>
-                    <q5:Script>from System import Array
-@returns(Array)
-def process(value):
-  return Array[float]([float(el) for el in value.split()])</q5:Script>
-                  </Expression>
-                  <Expression xsi:type="q4:CsvReader">
-                    <q4:FileName>E:\00_bonsai_ffmpeg_out\calibrationOut2018-05-04T16_08_06.csv</q4:FileName>
-                    <q4:ScanPattern>%s</q4:ScanPattern>
-                    <q4:SkipRows>0</q4:SkipRows>
-                  </Expression>
-                  <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
-                    <MemberName>FileName</MemberName>
-                    <Name>FileName</Name>
-                    <Value>E:\00_bonsai_ffmpeg_out\calibrationOut2018-05-04T16_08_06.csv</Value>
-                  </Expression>
-                  <Expression xsi:type="WorkflowOutput" />
-                </Nodes>
-                <Edges>
-                  <Edge>
-                    <From>0</From>
-                    <To>3</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>1</From>
-                    <To>0</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>2</From>
-                    <To>1</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                </Edges>
-              </Workflow>
-            </Expression>
-            <Expression xsi:type="NestedWorkflow">
-              <Name>stimuls list</Name>
-              <Workflow>
-                <Nodes>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="ToList" />
-                  </Expression>
-                  <Expression xsi:type="q4:CsvReader">
-                    <q4:FileName>E:\00_bonsai_ffmpeg_out\stimLists\14xSpeedTuning_fullDef.txt</q4:FileName>
-                    <q4:ScanPattern>%f %f %i %i %i %f %f</q4:ScanPattern>
-                    <q4:SkipRows>0</q4:SkipRows>
-                  </Expression>
-                  <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
-                    <MemberName>FileName</MemberName>
-                    <Name>FileName</Name>
-                    <Value>E:\00_bonsai_ffmpeg_out\stimLists\14xSpeedTuning_fullDef.txt</Value>
-                  </Expression>
-                  <Expression xsi:type="WorkflowOutput" />
-                </Nodes>
-                <Edges>
-                  <Edge>
-                    <From>0</From>
-                    <To>3</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>1</From>
-                    <To>0</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>2</From>
-                    <To>1</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                </Edges>
-              </Workflow>
-            </Expression>
-            <Expression xsi:type="NestedWorkflow">
-              <Name>ISI list</Name>
-              <Workflow>
-                <Nodes>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="ToList" />
-                  </Expression>
-                  <Expression xsi:type="q4:CsvReader">
-                    <q4:FileName>E:\00_bonsai_ffmpeg_out\isiList\60_60.txt</q4:FileName>
-                    <q4:ScanPattern>%f %f %f %f %f</q4:ScanPattern>
-                    <q4:SkipRows>1</q4:SkipRows>
-                  </Expression>
-                  <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
-                    <MemberName>FileName</MemberName>
-                    <Name>FileName</Name>
-                    <Value>E:\00_bonsai_ffmpeg_out\isiList\60_60.txt</Value>
-                  </Expression>
-                  <Expression xsi:type="WorkflowOutput" />
-                </Nodes>
-                <Edges>
-                  <Edge>
-                    <From>0</From>
-                    <To>3</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>1</From>
-                    <To>0</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>2</From>
-                    <To>1</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                </Edges>
-              </Workflow>
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="q3:UpdateFrame" />
-            </Expression>
-            <Expression xsi:type="MemberSelector">
-              <Selector>Source.Item1</Selector>
-            </Expression>
-            <Expression xsi:type="Equal" />
-            <Expression xsi:type="Condition">
-              <Workflow>
-                <Nodes>
-                  <Expression xsi:type="WorkflowInput">
-                    <Name>Source1</Name>
-                  </Expression>
-                  <Expression xsi:type="WorkflowOutput" />
-                  <Expression xsi:type="MemberSelector">
-                    <Selector>Source.Item1</Selector>
-                  </Expression>
-                </Nodes>
-                <Edges>
-                  <Edge>
-                    <From>0</From>
-                    <To>2</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>2</From>
-                    <To>1</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                </Edges>
-              </Workflow>
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="CombineLatest" />
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="CombineLatest" />
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="IntProperty">
-                <Value>3</Value>
-              </Combinator>
-            </Expression>
-            <Expression xsi:type="MemberSelector">
-              <Selector>Source.Item4</Selector>
-            </Expression>
-            <Expression xsi:type="NestedWorkflow">
-              <Name>start delay</Name>
-              <Description>seconds</Description>
-              <Workflow>
-                <Nodes>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="CombineLatest" />
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="Timer">
-                      <DueTime>PT0S</DueTime>
-                      <Period>PT1S</Period>
-                    </Combinator>
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="FloatProperty">
-                      <Value>0</Value>
-                    </Combinator>
-                  </Expression>
-                  <Expression xsi:type="ExternalizedPropertyOfSingleFloatProperty">
-                    <MemberName>Value</MemberName>
-                    <Name>Value</Name>
-                    <Value>0</Value>
-                  </Expression>
-                  <Expression xsi:type="GreaterThan" />
-                  <Expression xsi:type="WorkflowOutput" />
-                </Nodes>
-                <Edges>
-                  <Edge>
-                    <From>0</From>
-                    <To>4</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>1</From>
-                    <To>0</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>2</From>
-                    <To>0</To>
-                    <Label>Source2</Label>
-                  </Edge>
-                  <Edge>
-                    <From>3</From>
-                    <To>2</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>4</From>
-                    <To>5</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                </Edges>
-              </Workflow>
-            </Expression>
-            <Expression xsi:type="q5:PythonTransform">
-              <q5:Script>import clr
-clr.AddReference("OpenTK")
-from OpenTK import Vector2, Vector3,Vector4
-from System import Array, Single, Random,Tuple
-clr.AddReference("OpenCV.Net")
-from OpenCV.Net import *
-import math
-import traceback
-import random
-import sys
-
-generator = Random()
-print 'hello'
-VC=False #set True to store dot contrast instead of size in text output
-
-
-speed=1 #px/frame
-
-stimDir=math.pi/(180./90) #direction of dot movement away from dot start. Direction is relative to animal heading. pi/2 = perpendicular
-
-startDist=60. # (px) how far away from centroid dot first appears.
-endDist = 0. # (px) how far dot approaches
-
-groupSize=1 # number of times to repeat same dot size from sizeList
-
-# stimulus  timing is now specified in ISI file
-#groupGap=30*20 # (frames) delay before switching to a new size from sizeList
-#dotGap=30*20 # (frames) delay between dots of the same size
-#preGap=30*20
-#postGap=int(30*19.5)
-
-
-#define variables
-
-stimCount=0 #global counter for total stimulus presentation
-groupCount=0 #counter for presentations of same dot size
-startSize=0 #initial dot size set to 0
-endSize=15
-#iSize=[0,1.26/1.6,1.86/1.6];iContrast=[1.0,1.0,1.0] #Miguel's settings
-#iSize=[0,0.5,1.86/1.6];iContrast=[1.0,1.0,1.0] #Carlos' size settings
-#iSize=[0,1.86/1.6,1.86/1.6];iContrast=[0.0,0.2,1.0] #Miguel's settings for large dots variable contrast
-#iSize=[0,0.3,0.45,0.675,1.0,1.5,2.3];iContrast=[1.0,1.0,1.0,1.0,1.0,1.0] #Eliane's settings
-
-
-pointPathAll=[] #stores dot paths
-ar=Array[Vector4]([Vector4(0.,0.,0,0)]) # stores (x,y,size) array for openGL sprite drawing
-frCount=200#int(endSize+preGap+1) #counter for frames since dot presentation
-left=0
-front=0
-stimList=[]
-sAll=[]
-contrastAll=[]
-oldCoor=[]
-allCoor=[]
-isiDuration=[]
-# random number generator between min and max
-def randomFunc(generator,minval,maxval):
-  return int(round(generator.NextDouble() * (maxval - minval) + minval))
-
-# perspective transformation using calibration matrix to match camera and projector coordinates
-def transf(x,y,h):
-
-  values1 = Array[float]([x,y])
-  values2 = Array[float]([1,1])
-
-  point = Mat.FromArray(values1, 1, 1, Depth.F64,2)
-  out = Mat.FromArray(values2, 1, 1, Depth.F64,2)
-
-  CV.PerspectiveTransform(point,out,h)
-
-  x=out.Item[0].Val0
-  y=out.Item[0].Val1
-
-  return x,y
-
-def correctFish(x,y,xOff,yOff,xMax,yMax,xMaxCm,camHeightCm):
-
-  scale=xMax/xMaxCm
-  xR=x+xOff
-  yR=y+yOff
-
-  xR=xR-(scale*(xR-xMax/2.)/(camHeightCm*scale))
-  yR=yR-(scale*(yR-yMax/2.)/(camHeightCm*scale))
-
-  return xR-xOff,yR-yOff
-
-def animalStr(c,h,pp):
-
-  wellstr=[]
-
-
-  for a in range(len(c)): #loop over animals
-    if len(pp)==0:
-      xp,yp,xp2,yp2=0,0,0,0
-    else:
-      p=pp[a][0] #get current frame
-      xp=p.X #point
-      yp=p.Y #point
-      p2=pp[a][1]
-      xp2=p2.X
-      yp2=p2.Y
-    heading=h[a]
-    x=c[a][0] #animal
-    y=c[a][1]#animal
-
-    #concatenate animal and dot data into string (data are in arena reference coordinates).
-
-    #if no animal was found, x=NaN --&gt; output NaN for this animal
-    if math.isnan(x):
-      wellstr.append("NaN NaN NaN NaN NaN NaN NaN")
-
-    else:
-      welldata=(x,y,heading,xp,yp,xp2,yp2) 
-      wellstr.append("%i %i %0.3f %i %i %i %i" % welldata)
-
-  return wellstr
-
-def accumu(lis):
-  total = 0
-  for x in lis:
-    total += x
-    yield total
-        
-def getCurrentISI(isiList,currentCount):
-  isiRepeats=[x.Item2 for x in isiList]
-
-  nISI=len(isiRepeats)
-  RepAccumulated=list(accumu(isiRepeats))
-  currentISIn=sum([0 if x&gt;currentCount else 1 for x in RepAccumulated])
-  if currentISIn==nISI:
-    currentISIn=nISI-1
-  preGap=int(isiList[currentISIn].Item3*30)
-  postGap=int(isiList[currentISIn].Item4*30)
-  hyp=int(isiList[currentISIn].Item5*30)
-  return preGap,postGap,hyp
-  
-
-@returns(Tuple[Array[Vector4],str,float,int])
-def process(value):
-  global frCount,pointPathAll,size,ar,groupCount,stimDir,stimDirOff,stimDirOffB,left,front,stimList,sAll,contrastAll,oldCoor,allCoor,stimCount,isiDuration
-
-  episode=99
-  xMax=value.Item4.Width #2048.0 #relevant for openGL scaling
-  yMax=value.Item4.Height #1280.0
-
-  DotPathLength=int(endSize-startSize) # number of frames dot is visible
-
-  hArr =value.Item3 #projector-camera calibration matrix
-  h = Mat.FromArray(hArr, 3, 3, Depth.F64, 1)
-
-  cAll=[] #[(x,y)]: list of centroids (one for each tracked animal)
-  headingAll=[] # list of animal headings
-  oldCoor=allCoor
-  allCoor=[]
-  heading=[]
-  
-  if isiDuration==[]:
-    isiList=value.Item6
-    isiDuration=list(getCurrentISI(isiList,stimCount))
-    
-  preGap,postGap,gapFrames=isiDuration
-  
-  
-  #collect animal centroids and headings
-  for a in range(value.Item1.Count): #loop over animals
-    c=value.Item1[a].Centroid
-    c=[c.X,c.Y]
-    if math.isnan(c[0]):
-      if len(oldCoor)&gt;0:
-        if len(oldCoor[a])&gt;0:
-          c[0]=oldCoor[a][0]
-          c[1]=oldCoor[a][1]
-          heading=oldCoor[a][2]
-          #print 'fixed'
-
-    else:
-
-      xoff=value.Item2[a].Item1
-      yoff=value.Item2[a].Item2
-
-      #def correctFish(x,y,xOff,yOff,xMax,xMaxCm,camHeightCm):
-      c[0],c[1]=correctFish(c[0],c[1],xoff,yoff,xMax,yMax,32,75)
-      heading=value.Item1[a].Orientation
-    cAll.append(c)
-    headingAll.append(heading)
-    allCoor.append([c[0],c[1],heading])
-
-  try: #big loop to process for each frame
-
-	#decide what to do based on current frame number and episode triggers
-	#case 1: frCount==preGap-1 --&gt; one frame prior to dot presentation
-	#	--&gt; generate point path
-  
-    if frCount==preGap-1: #begin presentation of a new dot
-      stimCount += 1
-      
-      #pre-calculate dot paths for all animals
-      #(dot paths are not updates as the animal moves)
-
-      pointPathAll=[]
-
-	  # pick a new dot size from randomized list
-	  # loop through list using 'groupCount' as index.
-	  # reset once index is larger than list and re randomize list
-	  
-	  #reset when larger than list
-      if groupCount&gt;=len(stimList):
-          groupCount=0
-
-		# after reset, generate a new randomized list
-      if groupCount==0: #start of a new group: randomly select new dot size from list
-
-        size=10#sizeList[sizeInd]
-		
-		#initially (when length ==0) load stimList from txt input
-		#after that, re shuffle list
-        if len(stimList)==0:
-          stimList=value.Item5
-          random.shuffle(stimList,random.random)
-        else:
-          random.shuffle(stimList,random.random)
-
-	
-      if groupCount&lt;len(stimList):
-        
-        left=stimList[groupCount].Item3
-        sAll=[stimList[groupCount].Item1,stimList[groupCount].Item2]
-        contrastAll=[stimList[groupCount].Item6,stimList[groupCount].Item7]
-      
-      #decide left/right and front/back
-
-      offDegA=stimList[groupCount].Item4
-      offDegB=stimList[groupCount].Item5
-      groupCount+=1
-      stimDirOff=-math.pi/(180./offDegA) #direction relative to animal heading where dot first appears. Used together with startDist to determine location of dot start.
-      stimDirOffB=-math.pi/(180./offDegB)
-
-      # invert direction of stimulus movement and stimulus start location to alternate left and right side
-      if left:
-        sd=-1*stimDir 
-        sdo=-1*stimDirOff
-        sdoB=-1*stimDirOffB
-
-      else:
-        sd=stimDir 
-        sdo=stimDirOff
-        sdoB=stimDirOffB
-
-		#generate point paths for each animal (if found)
-      for a in range(value.Item1.Count):
-        #for each arena, test if animal was found and then generate dot path
-
-        c=cAll[a]
-        pointPath=[]
-        if math.isnan(c[0]): #generate empty path if no animal found
-          for i in range(2):
-            pointPath.append(Point(0,0))
-
-        else: #actual dot path calculation:
-
-          #find dot start point
-          heading=headingAll[a]+sdo #start point direction
-          distance=startDist # distance to dot start point
-          rise = math.sin(heading)*distance
-          run = math.cos(heading)*distance
-          x=c[0]+run
-          y=c[1]+rise
-          pointPath.append(Point(x,y))
-          heading=headingAll[a]+sdoB
-          rise = math.sin(heading)*distance
-          run = math.cos(heading)*distance
-          x=c[0]+run
-          y=c[1]+rise
-          pointPath.append(Point(x,y))
-
-        pointPathAll.append(pointPath)
-
-        # in each frame, decide if dot should draw
-      
-    wellstr= animalStr(cAll,headingAll,pointPathAll)
-
-    TrialLengh=DotPathLength+gapFrames+preGap+postGap #this is the sum of all episoded
-	
-    if frCount &lt; TrialLengh: # outer loop for each dot presentation
-      
-      frCount+=1
-      episode=3 #gap
-
-      if frCount-(preGap+postGap)&lt;DotPathLength: # still have dot path to show
-        sizeNow=[0,0]
-        ContrastNow=[0,0]
-        if frCount&lt;preGap:
-          episode=0
-        elif DotPathLength+preGap &lt; frCount &lt;DotPathLength+preGap+postGap:
-          pointPathAll=[]
-          episode=2
-
-        else:
-          sizeNow=sAll
-          ContrastNow=contrastAll
-          episode=1
-        drawAll=[] #list of all dot coordinates
-
-
-        for a in range(value.Item1.Count): #loop over animals
-
-          
-
-          #add arena offset to point coordinates for display
-          xoff=value.Item2[a].Item1
-          yoff=value.Item2[a].Item2
-
-          if len(pointPathAll)==0:
-            xx,yy=0,0
-            drawAll.append([xx,yy,0,0])
-            drawAll.append([xx,yy,0,0])
-            currSize=[0,0]
-            currContrast=[0,0]
-          else:
-            pointPath=pointPathAll[a] #get entire current dot path (this allows to draw multiple dots from same path)
-            currSize=[]
-            currContrast=[]
-            for i in range(2): #can show multiple dots
-
-              p=pointPath[i]
-
-              xp=p.X#+r
-              yp=p.Y#+r
-              xx=xp+xoff
-              yy=yp+yoff
-              xx,yy=transf(xx,yy,h) ##projector-camera calibration
-
-              currSize.append(int(sizeNow[i]*(frCount-preGap))*speed)
-              currContrast.append(ContrastNow[i])
-              drawAll.append([xx,yy,currContrast[i],currSize[i]])
-        if VC:
-          welldata=(currSize[0],currSize[1],left,episode,currContrast[0],currContrast[1])
-          wellstr.append("%.2f %.2f %i %i %.2f %.2f" % welldata)
-
-        else:
-          welldata=(currSize[0],currSize[1],left,episode,currContrast[0],currContrast[1])
-          wellstr.append("%.2f %.2f %i %i %.2f %.2f" % welldata)
-
-        #build dot array and output string from all animals
-        ar=Array[Vector4]([Vector4(2*(xy[0]-xMax/2)/xMax,-2*(xy[1]-yMax/2)/yMax,xy[3],xy[2]) for xy in drawAll])
-        st=" ".join(wellstr)
-
-      else: #no drawing array between dot presentations
-        ar=Array[Vector4]([Vector4(0.,0.,0.,0)])
-        #st='gap'
-        welldata=(0,0,left,episode,0,0) 
-        wellstr.append("%.2f %.2f %i %i %.2f %.2f" % welldata)
-        st=" ".join(wellstr)
-    
-    #End of Trial: reset frame count, show nothing, get new ISI durations
-    else:
-      isiList=value.Item6
-      isiDuration=list(getCurrentISI(isiList,stimCount))
-      frCount=0
-      ar=Array[Vector4]([Vector4(0.,0.,0.,0)])
-      #st='gap'
-      welldata=(0,0,left,episode,0,0) 
-      wellstr.append("%.2f %.2f %i %i %.2f %.2f" % welldata)
-      st=" ".join(wellstr)
-
-  except:
-
-    print traceback.format_exc()
-    ar=Array[Vector4]([Vector4(0.,0.,0.,0)])
-    st='none'
-
-
-  return Tuple.Create(ar,st,0.,episode)
-
-def unload():
-  global frCount,pointPathAll, size,ar,groupCount,stimDir,stimDirOff,stimList,sAll,stimCount,isiDuration
-  frCount=None
-  pointPathAll=None
-  ar=None
-  size=None
-  groupCount=None
-  stimDir=None
-  stimDirOff=None
-  stimList=None
-  sAll=None
-  contrastAll=None
-  stimCount=None
-  isiDuration=None</q5:Script>
-            </Expression>
-            <Expression xsi:type="SubscribeSubject">
-              <Name>trackOut</Name>
             </Expression>
             <Expression xsi:type="WorkflowInput">
               <Name>Source1</Name>
             </Expression>
-            <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
-              <MemberName>FileName</MemberName>
-              <Name>CalibrationFile</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\calibrationOut2018-05-04T16_08_06.csv</Value>
+            <Expression xsi:type="ExternalizedPropertyOfStringImageWriter">
+              <MemberName>Path</MemberName>
+              <Name>pipeNamed</Name>
+              <Value />
             </Expression>
-            <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
-              <MemberName>FileName</MemberName>
-              <Name>Stimulus List</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\stimLists\14xSpeedTuning_fullDef.txt</Value>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q1:ImageWriter">
+                <q1:Path>\\.\pipe\p201805080109240</q1:Path>
+                <q1:Suffix>None</q1:Suffix>
+                <q1:Overwrite>false</q1:Overwrite>
+              </Combinator>
             </Expression>
-            <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
-              <MemberName>FileName</MemberName>
-              <Name>ISI list</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\isiList\60_60.txt</Value>
-            </Expression>
-            <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
-              <MemberName>FileName</MemberName>
-              <Name>ROI file</Name>
-              <Value>E:\00_bonsai_ffmpeg_out\ROIdef2018-05-04T16_06_53.csv</Value>
-            </Expression>
-            <Expression xsi:type="ExternalizedPropertyOfSingleFloatProperty">
-              <MemberName>Value</MemberName>
-              <Name>start delay</Name>
-              <Value>0</Value>
-            </Expression>
-            <Expression xsi:type="q5:PythonSource">
-              <q5:Name>getTime</q5:Name>
-              <q5:Script>import datetime
+            <Expression xsi:type="q3:PythonSource">
+              <q3:Script>import datetime
 @returns(str)
 def generate():
   currentTime=datetime.datetime.now()
-  yield currentTime.strftime('%Y%m%d%H%M%S')</q5:Script>
+  yield currentTime.strftime('%Y%m%d%H%M%S')</q3:Script>
             </Expression>
-            <Expression xsi:type="NestedWorkflow">
-              <Name>save video</Name>
-              <Workflow>
-                <Nodes>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="StringProperty">
-                      <Value>\\.\pipe\p</Value>
-                    </Combinator>
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="CombineLatest" />
-                  </Expression>
-                  <Expression xsi:type="Add" />
-                  <Expression xsi:type="ExternalizedPropertyOfStringImageWriter">
-                    <MemberName>Path</MemberName>
-                    <Name>pipeNamed</Name>
-                    <Value />
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="CombineLatest" />
-                  </Expression>
-                  <Expression xsi:type="NestedWorkflow">
-                    <Name>ffmpeg</Name>
-                    <Workflow>
-                      <Nodes>
-                        <Expression xsi:type="q5:PythonSource">
-                          <q5:Script>import datetime
-@returns(str)
-def generate():
-  currentTime=datetime.datetime.now()
-  yield currentTime.strftime('%Y%m%d%H%M%S')</q5:Script>
-                        </Expression>
-                        <Expression xsi:type="Combinator">
-                          <Combinator xsi:type="IntProperty">
-                            <Value>30</Value>
-                          </Combinator>
-                        </Expression>
-                        <Expression xsi:type="Combinator">
-                          <Combinator xsi:type="Zip" />
-                        </Expression>
-                        <Expression xsi:type="q5:PythonTransform">
-                          <q5:Script>import subprocess as sp
+            <Expression xsi:type="SubscribeSubject">
+              <Name>pipeName</Name>
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Zip" />
+            </Expression>
+            <Expression xsi:type="q3:PythonTransform">
+              <q3:Name>ffmpeg</q3:Name>
+              <q3:Script>import subprocess as sp
 import datetime
 
 @returns(bool)
@@ -1356,527 +122,226 @@ def process(inputs):
   print 'using pipe',pipeName
   cmd='c:\\ffmpeg\\bin\\ffmpeg.exe -y -f rawvideo -vcodec rawvideo -s '+vid_width+'x'+vid_height+' -r '+vid_rate+' -pix_fmt gray -i '+pipeName+' -q:v '+codec_q+' -vcodec mpeg4 -vtag xvid e:\\00_bonsai_ffmpeg_out\\out_id'+cam_id+'_'+vid_rate+'fps'+'_'+currentTime+'.avi'
   sp.Popen(cmd)
-  return True</q5:Script>
-                        </Expression>
-                        <Expression xsi:type="WorkflowInput">
-                          <Name>Source1</Name>
-                        </Expression>
-                        <Expression xsi:type="WorkflowOutput" />
-                        <Expression xsi:type="Combinator">
-                          <Combinator xsi:type="IntProperty">
-                            <Value>5</Value>
-                          </Combinator>
-                        </Expression>
-                        <Expression xsi:type="Combinator">
-                          <Combinator xsi:type="IntProperty">
-                            <Value>0</Value>
-                          </Combinator>
-                        </Expression>
-                        <Expression xsi:type="ExternalizedPropertyOfInt32IntProperty">
-                          <MemberName>Value</MemberName>
-                          <Name>codec q</Name>
-                          <Value>5</Value>
-                        </Expression>
-                        <Expression xsi:type="ExternalizedPropertyOfInt32IntProperty">
-                          <MemberName>Value</MemberName>
-                          <Name>cam id</Name>
-                          <Value>0</Value>
-                        </Expression>
-                        <Expression xsi:type="ExternalizedPropertyOfInt32IntProperty">
-                          <MemberName>Value</MemberName>
-                          <Name>vid fps</Name>
-                          <Value>30</Value>
-                        </Expression>
-                        <Expression xsi:type="MemberSelector">
-                          <Selector>Source.Item1.Width</Selector>
-                        </Expression>
-                        <Expression xsi:type="MemberSelector">
-                          <Selector>Source.Item1.Height</Selector>
-                        </Expression>
-                        <Expression xsi:type="Combinator">
-                          <Combinator xsi:type="Take">
-                            <Count>1</Count>
-                          </Combinator>
-                        </Expression>
-                        <Expression xsi:type="MemberSelector">
-                          <Selector>Source.Item1</Selector>
-                        </Expression>
-                        <Expression xsi:type="MemberSelector">
-                          <Selector>Source.Item2</Selector>
-                        </Expression>
-                        <Expression xsi:type="Combinator">
-                          <Combinator xsi:type="Zip" />
-                        </Expression>
-                      </Nodes>
-                      <Edges>
-                        <Edge>
-                          <From>0</From>
-                          <To>2</To>
-                          <Label>Source3</Label>
-                        </Edge>
-                        <Edge>
-                          <From>1</From>
-                          <To>2</To>
-                          <Label>Source2</Label>
-                        </Edge>
-                        <Edge>
-                          <From>2</From>
-                          <To>3</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>4</From>
-                          <To>13</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>4</From>
-                          <To>14</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>6</From>
-                          <To>2</To>
-                          <Label>Source5</Label>
-                        </Edge>
-                        <Edge>
-                          <From>7</From>
-                          <To>2</To>
-                          <Label>Source4</Label>
-                        </Edge>
-                        <Edge>
-                          <From>8</From>
-                          <To>6</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>9</From>
-                          <To>7</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>10</From>
-                          <To>1</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>11</From>
-                          <To>16</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>12</From>
-                          <To>16</To>
-                          <Label>Source2</Label>
-                        </Edge>
-                        <Edge>
-                          <From>13</From>
-                          <To>11</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>13</From>
-                          <To>12</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>13</From>
-                          <To>15</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>14</From>
-                          <To>5</To>
-                          <Label>Source1</Label>
-                        </Edge>
-                        <Edge>
-                          <From>15</From>
-                          <To>16</To>
-                          <Label>Source3</Label>
-                        </Edge>
-                        <Edge>
-                          <From>16</From>
-                          <To>2</To>
-                          <Label>Source6</Label>
-                        </Edge>
-                      </Edges>
-                    </Workflow>
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="q1:ImageWriter">
-                      <q1:Path>\\.\pipe\p\\.\pipe\video_all0</q1:Path>
-                      <q1:Suffix>None</q1:Suffix>
-                      <q1:Overwrite>false</q1:Overwrite>
-                    </Combinator>
-                  </Expression>
-                  <Expression xsi:type="WorkflowInput">
-                    <Name>Source1</Name>
-                  </Expression>
-                  <Expression xsi:type="WorkflowOutput" />
-                  <Expression xsi:type="MemberSelector">
-                    <Selector>Source.Item2</Selector>
-                  </Expression>
-                  <Expression xsi:type="MemberSelector">
-                    <Selector>Source.Item1</Selector>
-                  </Expression>
-                  <Expression xsi:type="SubscribeSubject">
-                    <Name>DataPath</Name>
-                  </Expression>
-                  <Expression xsi:type="q5:PythonTransform">
-                    <q5:Name>ReadCounter</q5:Name>
-                    <q5:Script>@returns(str)
-def process(value):
-  file = open(value + 'counter.txt','r') 
-  num=file.read()
-  fname = r'\\.\pipe\video_all' + num
-  return num</q5:Script>
-                  </Expression>
-                </Nodes>
-                <Edges>
-                  <Edge>
-                    <From>0</From>
-                    <To>1</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>1</From>
-                    <To>2</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>2</From>
-                    <To>3</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>2</From>
-                    <To>4</To>
-                    <Label>Source2</Label>
-                  </Edge>
-                  <Edge>
-                    <From>3</From>
-                    <To>6</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>4</From>
-                    <To>5</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>6</From>
-                    <To>8</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>7</From>
-                    <To>10</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>7</From>
-                    <To>9</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>10</From>
-                    <To>6</To>
-                    <Label>Source2</Label>
-                  </Edge>
-                  <Edge>
-                    <From>10</From>
-                    <To>4</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>11</From>
-                    <To>12</To>
-                    <Label>Source1</Label>
-                  </Edge>
-                  <Edge>
-                    <From>12</From>
-                    <To>1</To>
-                    <Label>Source2</Label>
-                  </Edge>
-                </Edges>
-              </Workflow>
+
+  return True</q3:Script>
             </Expression>
             <Expression xsi:type="Combinator">
-              <Combinator xsi:type="CombineLatest" />
+              <Combinator xsi:type="IntProperty">
+                <Value>30</Value>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="IntProperty">
+                <Value>5</Value>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="IntProperty">
+                <Value>0</Value>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfInt32IntProperty">
+              <MemberName>Value</MemberName>
+              <Name>codec q</Name>
+              <Value>5</Value>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfInt32IntProperty">
+              <MemberName>Value</MemberName>
+              <Name>cam id</Name>
+              <Value>0</Value>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfInt32IntProperty">
+              <MemberName>Value</MemberName>
+              <Name>vid fps</Name>
+              <Value>30</Value>
+            </Expression>
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Item1.Width</Selector>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Zip" />
+            </Expression>
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Item1.Height</Selector>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Take">
+                <Count>1</Count>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Item2</Selector>
             </Expression>
           </Nodes>
           <Edges>
             <Edge>
-              <From>4</From>
-              <To>0</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>5</From>
-              <To>1</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>6</From>
-              <To>2</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>7</From>
-              <To>3</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>8</From>
-              <To>4</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>9</From>
-              <To>5</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>10</From>
-              <To>7</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>11</From>
-              <To>10</To>
-              <Label>Source3</Label>
-            </Edge>
-            <Edge>
-              <From>11</From>
-              <To>8</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>12</From>
-              <To>8</To>
-              <Label>Source2</Label>
-            </Edge>
-            <Edge>
-              <From>12</From>
-              <To>35</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>13</From>
-              <To>10</To>
-              <Label>Source4</Label>
-            </Edge>
-            <Edge>
-              <From>13</From>
-              <To>8</To>
-              <Label>Source3</Label>
-            </Edge>
-            <Edge>
-              <From>14</From>
-              <To>8</To>
-              <Label>Source4</Label>
-            </Edge>
-            <Edge>
-              <From>15</From>
-              <To>8</To>
-              <Label>Source5</Label>
-            </Edge>
-            <Edge>
-              <From>16</From>
-              <To>9</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>16</From>
-              <To>10</To>
-              <Label>Source2</Label>
-            </Edge>
-            <Edge>
-              <From>17</From>
-              <To>9</To>
-              <Label>Source2</Label>
-            </Edge>
-            <Edge>
-              <From>18</From>
-              <To>10</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>19</From>
-              <To>12</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>20</From>
+              <From>0</From>
               <To>18</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
-              <From>21</From>
-              <To>19</To>
+              <From>1</From>
+              <To>3</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
-              <From>22</From>
-              <To>20</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>23</From>
-              <To>20</To>
+              <From>2</From>
+              <To>3</To>
               <Label>Source2</Label>
             </Edge>
             <Edge>
-              <From>24</From>
-              <To>21</To>
+              <From>3</From>
+              <To>0</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
-              <From>25</From>
-              <To>17</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>25</From>
+              <From>3</From>
               <To>6</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
-              <From>25</From>
-              <To>23</To>
+              <From>4</From>
+              <To>7</To>
+              <Label>Source3</Label>
+            </Edge>
+            <Edge>
+              <From>5</From>
+              <To>2</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
-              <From>26</From>
-              <To>25</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>27</From>
-              <To>21</To>
+              <From>5</From>
+              <To>0</To>
               <Label>Source2</Label>
             </Edge>
             <Edge>
-              <From>28</From>
-              <To>13</To>
+              <From>7</From>
+              <To>8</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
-              <From>29</From>
-              <To>14</To>
+              <From>9</From>
+              <To>7</To>
+              <Label>Source2</Label>
+            </Edge>
+            <Edge>
+              <From>10</From>
+              <To>7</To>
+              <Label>Source5</Label>
+            </Edge>
+            <Edge>
+              <From>11</From>
+              <To>7</To>
+              <Label>Source4</Label>
+            </Edge>
+            <Edge>
+              <From>12</From>
+              <To>10</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
-              <From>30</From>
-              <To>15</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>31</From>
+              <From>13</From>
               <To>11</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
-              <From>32</From>
-              <To>24</To>
+              <From>14</From>
+              <To>9</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
-              <From>33</From>
-              <To>35</To>
+              <From>15</From>
+              <To>16</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>16</From>
+              <To>7</To>
+              <Label>Source6</Label>
+            </Edge>
+            <Edge>
+              <From>17</From>
+              <To>16</To>
               <Label>Source2</Label>
             </Edge>
             <Edge>
-              <From>35</From>
-              <To>34</To>
+              <From>18</From>
+              <To>15</To>
               <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>18</From>
+              <To>17</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>18</From>
+              <To>19</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>19</From>
+              <To>16</To>
+              <Label>Source3</Label>
             </Edge>
           </Edges>
         </Workflow>
       </Expression>
-      <Expression xsi:type="Combinator">
-        <Combinator xsi:type="TimeSpanWindow">
-          <TimeSpan>PT30S</TimeSpan>
-        </Combinator>
-      </Expression>
-      <Expression xsi:type="ReplaySubject">
-        <Name>DataPath</Name>
-        <BufferSize xsi:nil="true" />
-      </Expression>
-      <Expression xsi:type="q5:PythonTransform">
-        <q5:Script>import time
-import os
-from datetime import date
-today = date.today()
+      <Expression xsi:type="q3:PythonSource">
+        <q3:Script>import datetime
 @returns(str)
-def process(value):
-  sep="\\"
-  month='{0:d}'.format(today.month)
-  d='{:%Y%m%d}'.format(today)
-  path=value+d+sep
-  if not os.path.exists(path):
-    os.mkdir(path)
-
-  fname = path+'counter.txt'
-  if not os.path.isfile(str(fname)):
-    file= open(fname,'w') 
-    file.write(str(0))
-    file.close()
-
-
-  return path</q5:Script>
+def generate():
+  currentTime=datetime.datetime.now()
+  yield currentTime.strftime('%Y%m%d%H%M%S')</q3:Script>
       </Expression>
-      <Expression xsi:type="Combinator">
-        <Combinator xsi:type="StringProperty">
-          <Value>E:\00_bonsai_ffmpeg_out\</Value>
-        </Combinator>
+      <Expression xsi:type="q3:ExpressionTransform">
+        <q3:Expression>it.ToString()</q3:Expression>
       </Expression>
-      <Expression xsi:type="Combinator">
-        <Combinator xsi:type="Take">
-          <Count>1</Count>
-        </Combinator>
-      </Expression>
+      <Expression xsi:type="Add" />
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="CombineLatest" />
       </Expression>
-      <Expression xsi:type="q5:PythonTransform">
-        <q5:Name>LogCounter</q5:Name>
-        <q5:Script>@returns(str)
-def process(value):
-  file = open(value.Item2 + 'counter.txt','r') 
-  num=int(file.read())+1
-  file.close()
-  file = open(value.Item2 + 'counter.txt','w') 
-  file.write(str(num))
-  file.close()
-  return str(num)</q5:Script>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="StringProperty">
+          <Value>\\.\pipe\p</Value>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="Index" />
+      </Expression>
+      <Expression xsi:type="MemberSelector">
+        <Selector>Source.Index</Selector>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="ElementCountWindow">
+          <Count>450</Count>
+          <Skip xsi:nil="true" />
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="BehaviorSubject">
+        <Name>pipeName</Name>
       </Expression>
     </Nodes>
     <Edges>
       <Edge>
         <From>0</From>
-        <To>2</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>1</From>
-        <To>6</To>
+        <To>9</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>2</From>
-        <To>1</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>4</From>
-        <To>3</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>4</From>
-        <To>7</To>
+        <To>5</To>
         <Label>Source2</Label>
+      </Edge>
+      <Edge>
+        <From>3</From>
+        <To>5</To>
+        <Label>Source3</Label>
+      </Edge>
+      <Edge>
+        <From>4</From>
+        <To>10</To>
+        <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>5</From>
@@ -1885,12 +350,27 @@ def process(value):
       </Edge>
       <Edge>
         <From>6</From>
-        <To>7</To>
+        <To>5</To>
         <Label>Source1</Label>
       </Edge>
       <Edge>
         <From>7</From>
         <To>8</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>8</From>
+        <To>3</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>9</From>
+        <To>1</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>9</From>
+        <To>7</To>
         <Label>Source1</Label>
       </Edge>
     </Edges>
@@ -1900,41 +380,19 @@ def process(value):
     <Type>Bonsai.Vision.Grayscale, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Vision.BackgroundSubtraction, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.uEye.uEyeCapture, Bonsai.uEye, Version=2.1.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Shaders.DrawArrays, Bonsai.Shaders, Version=0.18.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.IO.TextWriter, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Shaders.DrawMesh, Bonsai.Shaders, Version=0.18.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Shaders.UpdateUniform, Bonsai.Shaders, Version=0.18.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Shaders.UpdateVertexBuffer, Bonsai.Shaders, Version=0.18.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.FloatProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Scripting.ExpressionTransform, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Reactive.CombineLatest, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Reactive.AccumulateBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Reactive.Take, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Scripting.PythonTransform, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Reactive.Zip, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.MultiplyBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Reactive.Concat, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Reactive.ToList, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Vision.LargestBinaryRegion, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Vision.BinaryRegionAnalysis, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Vision.FindContours, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Vision.Crop, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.InputMappingBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.joh.Vision.HeadingFromOrientation, BonsaiPackage5, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Shaders.UpdateFrame, Bonsai.Shaders, Version=0.18.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.EqualBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.IntProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Reactive.Timer, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Expressions.FloatProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.GreaterThanBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Scripting.PythonSource, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.StringProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.AddBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Vision.ImageWriter, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Expressions.IntProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Vision.ImageWriter, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Reactive.TimeSpanWindow, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Scripting.PythonSource, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Zip, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Scripting.PythonTransform, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.IntProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Expressions.IntProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Take, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Scripting.ExpressionTransform, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.AddBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.StringProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Index, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.ElementCountWindow, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
   </ExtensionTypes>
 </WorkflowBuilder>
